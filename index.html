@@ -74,7 +74,7 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 <canvas id="c" aria-label="Blobbo Hop Spiel"></canvas>
 <div id="auth" hidden><div class="box">
 <h2>Account</h2>
-<div id="aOut"><input id="aName" maxlength="14" autocomplete="nickname" placeholder="Spielername (zum Registrieren)"><input id="aMail" type="email" autocomplete="email" placeholder="E-Mail"><input id="aPw" type="password" autocomplete="current-password" placeholder="Passwort (min. 6 Zeichen)"><button id="aLogin" class="blue">Einloggen</button><button id="aReg">Registrieren</button></div>
+<div id="aOut"><input id="aName" maxlength="14" autocomplete="nickname" placeholder="Spielername (zum Registrieren)"><input id="aMail" type="email" autocomplete="email" placeholder="E-Mail"><input id="aPw" type="password" autocomplete="current-password" placeholder="Passwort (min. 6 Zeichen)"><button id="aLogin" class="blue">Einloggen</button><button id="aReg">Registrieren</button><button id="aForgot">Passwort vergessen?</button></div>
 <div id="aIn" hidden>
 <div class="idc">
  <div class="idh"><span>BLOBBO-AUSWEIS</span><span>★</span></div>
@@ -89,7 +89,7 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
  <div class="stats"><div><b id="stCoins">0</b><span>Münzen</span></div><div><b id="stTotal">0</b><span>Gesamt</span></div><div><b id="stBest">0</b><span>Highscore</span></div></div>
  <div class="idf"><span>ID <span id="idNo"></span></span><div class="bar"></div></div>
 </div>
-<button id="aSave" class="blue">Jetzt speichern</button><button id="aLogout" class="red">Ausloggen</button></div>
+<button id="aSave" class="blue">Jetzt speichern</button><button id="aLogout" class="red">Ausloggen</button><p id="cloudSt" style="font-size:14px"></p></div>
 <p id="aMsg"></p><button id="aClose" class="red">Schließen</button>
 </div>
 <div id="nameDlg" hidden><div class="dlg">
@@ -114,6 +114,7 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 <div><input id="setN" type="number" min="0" placeholder="Münzen"><button id="setGo" class="blue">Setzen</button></div>
 <div><button id="unlock" class="blue">Alles freischalten</button><button id="god" class="blue">Gott-Modus: aus</button></div>
 <div><input id="newPin" type="password" inputmode="numeric" placeholder="Neuer PIN"><button id="pinSet" class="blue">PIN ändern</button></div>
+<div><button id="restore" class="blue">Cloud-Backup einspielen</button></div>
 <div><button id="wipe" class="red">Fortschritt löschen</button></div>
 </div>
 <p id="msg2"></p>
@@ -161,8 +162,32 @@ const ITEMS={
 
 let SV={coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}};
 try{const o=JSON.parse(localStorage.getItem("blobbo-save"));if(o&&o.own&&o.eq)SV=o}catch(e){}
-function save(){try{localStorage.setItem("blobbo-save",JSON.stringify(SV))}catch(e){}cloudSave()}
-function cloudSave(){const F=window.FB;if(F&&F.user){if(F.pushBoard)F.pushBoard({name:SV.name||"Spieler",bestH:SV.bestH||0,best,total:Math.max(SV.total||0,SV.coins),col:SV.eq.col,hat:SV.eq.hat}).catch(()=>{});F.save({name:SV.name||"Spieler",bestH:SV.bestH||0,total:SV.total||0,coins:SV.coins,own:SV.own,eq:SV.eq,best}).catch(()=>{})}}
+function saveLocal(){SV.ts=Date.now();try{localStorage.setItem("blobbo-save",JSON.stringify(SV))}catch(e){}}
+function save(){saveLocal();cloudSave()}
+const cn=v=>{v=Math.floor(+v);return isFinite(v)&&v>0?Math.min(v,1e9):0};
+let cloudReady=false,cloudT=null,cloudFail=0,cloudSt="";
+function cloudSave(){const F=window.FB;if(!F||!F.user||!cloudReady)return;clearTimeout(cloudT);cloudT=setTimeout(cloudFlush,600)}
+async function cloudFlush(){
+  const F=window.FB;if(!F||!F.user||!cloudReady)return false;
+  clearTimeout(cloudT);
+  const nm=String(SV.name||"Spieler").slice(0,14)||"Spieler";
+  const data={name:nm,bestH:cn(SV.bestH),total:cn(SV.total),coins:cn(SV.coins),own:SV.own.slice(0,200),eq:SV.eq,best:cn(best),ts:SV.ts||Date.now()};
+  const lb={name:nm,bestH:data.bestH,best:data.best,total:data.total,col:SV.eq.col,hat:SV.eq.hat};
+  let ok=false;
+  try{
+    if(F.pushBoard)F.pushBoard(lb).catch(e=>console.error("Leaderboard:",e));
+    await Promise.race([F.save(data),new Promise((_,rej)=>setTimeout(()=>rej({code:"timeout"}),8000))]);
+    cloudFail=0;ok=true;cloudSt="ok:"+new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+  }catch(e){
+    console.error(e);
+    if(e.code==="permission-denied")cloudSt="err:Keine Berechtigung (Regeln prüfen)";
+    else{cloudFail++;cloudSt="wait";cloudT=setTimeout(cloudFlush,Math.min(60000,3000*cloudFail))}
+  }
+  refreshStatus();return ok;
+}
+addEventListener("online",()=>cloudFlush());
+addEventListener("pagehide",()=>cloudFlush());
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")cloudFlush()});
 const MB={x:120,y:432,w:160,h:44},AB={x:120,y:484,w:160,h:44},GB={x:120,y:536,w:160,h:44};
 function acctBtn(){btn(AB.x,AB.y,AB.w,AB.h,(window.FB&&window.FB.user)?"ACCOUNT":"LOG IN","#5bb8ff");btn(GB.x,GB.y,GB.w,GB.h,"SETTINGS","#a77bff");btn(MB.x,MB.y,MB.w,MB.h,"MULTIPLAYER","#6bd96b")}
 const CH={x:10,y:10,w:158,h:48};
@@ -222,10 +247,12 @@ function drawHat2(h){
   }
   if(h==="ufo"){
     ctx.save();ctx.translate(0,Math.sin(t*.1)*1.5);
-    ctx.beginPath();ctx.arc(0,-22,10,Math.PI,0);ctx.closePath();outline("#aef3ff");
-    ctx.beginPath();ctx.arc(0,-26,4.5,0,7);outline("#7cff6b");
     ctx.beginPath();ctx.ellipse(0,-20,23,7,0,0,7);outline("#9aa6c4");
     for(let k=0;k<5;k++){const a=t*.12+k*1.2566;ctx.beginPath();ctx.arc(Math.cos(a)*16,-20+Math.sin(a)*4.5,2.4,0,7);ctx.fillStyle=`hsl(${(k*72+t*6)%360},95%,60%)`;ctx.fill()}
+    ctx.beginPath();ctx.arc(0,-25,4.5,0,7);outline("#7cff6b");
+    ctx.beginPath();ctx.arc(0,-20,11,Math.PI,0);ctx.closePath();
+    ctx.fillStyle="rgba(174,243,255,.55)";ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
+    ctx.beginPath();ctx.arc(0,-20,7,Math.PI*1.1,Math.PI*1.45);ctx.lineWidth=2;ctx.strokeStyle="rgba(255,255,255,.9)";ctx.stroke();
     ctx.restore();return true;
   }
   if(h==="flame"){
@@ -655,7 +682,8 @@ function refreshAuth(){
   $a("idNo").textContent=u.uid.slice(0,8).toUpperCase();drawAvatar();
 }
 function startEdit(){$a("nameErr").textContent="";$a("nameDlg").hidden=false;$a("nameIn").value=SV.name||"";setTimeout(()=>{$a("nameIn").focus();$a("nameIn").select()},50)}
-function openAuth(){authOpen=true;$a("nameDlg").hidden=true;$a("auth").hidden=false;$a("aMsg").textContent=window.FB?"":"Online-Funktionen nicht verfügbar (Firebase nicht eingerichtet oder offline).";refreshAuth()}
+function refreshStatus(){const el=document.getElementById("cloudSt");if(!el)return;const c=cloudSt||"";el.textContent=c.startsWith("ok:")?"Cloud: gespeichert ("+c.slice(3)+")":c==="wait"?"Cloud: wartet auf Verbindung (lokal gesichert)":c.startsWith("err:")?"Cloud-Fehler: "+c.slice(4):""}
+function openAuth(){refreshStatus();authOpen=true;$a("nameDlg").hidden=true;$a("auth").hidden=false;$a("aMsg").textContent=window.FB?"":"Online-Funktionen nicht verfügbar (Firebase nicht eingerichtet oder offline).";refreshAuth()}
 $a("aClose").onclick=()=>{authOpen=false;$a("auth").hidden=true};
 function fbErr(e){const m={"auth/invalid-email":"Ungültige E-Mail.","auth/invalid-credential":"E-Mail oder Passwort falsch.","auth/email-already-in-use":"E-Mail ist schon registriert.","auth/weak-password":"Passwort: mindestens 6 Zeichen.","auth/missing-password":"Bitte Passwort eingeben.","auth/network-request-failed":"Keine Verbindung."};return m[e.code]||"Fehler: "+(e.code||e.message)}
 async function doAuth(kind){
@@ -679,22 +707,50 @@ function nameOk(){
 }
 $a("nameOk").onclick=nameOk;$a("nameNo").onclick=()=>{$a("nameDlg").hidden=true};$a("nameIn").onkeydown=e=>{if(e.key==="Enter")nameOk()};
 $a("aLogout").onclick=async()=>{
+  $a("aMsg").textContent="Sichere Daten...";
+  const ok=await cloudFlush();
+  if(!ok){$a("aMsg").textContent="Cloud-Speichern fehlgeschlagen. Bitte online gehen und erneut versuchen - deine Daten bleiben sonst nicht erhalten.";return}
+  cloudReady=false;clearTimeout(cloudT);
   try{await window.FB.logout()}catch(e){}
-  SV=DEF();best=0;try{localStorage.removeItem("blobbo-best")}catch(e){}save();$a("aMsg").textContent="Ausgeloggt."
+  SV=DEF();best=0;try{localStorage.removeItem("blobbo-best")}catch(e){}saveLocal();cloudSt="";refreshStatus();$a("aMsg").textContent="Ausgeloggt."
 };
-addEventListener("fb-user",async()=>{
+$a("aForgot").onclick=async()=>{
+  const em=$a("aMail").value.trim();
+  if(!window.FB||!window.FB.resetPw){$a("aMsg").textContent="Firebase ist nicht eingerichtet.";return}
+  if(!em){$a("aMsg").textContent="Gib oben deine E-Mail ein.";return}
+  try{await window.FB.resetPw(em);$a("aMsg").textContent="E-Mail zum Zurücksetzen wurde gesendet."}catch(e){$a("aMsg").textContent=fbErr(e)}
+};
+let loadTry=0;
+async function onUser(){
   const u=window.FB&&window.FB.user;
-  if(u){
-    try{
-      const d=await window.FB.load();
-      if(d){const df=DEF();SV={name:d.name||pendingName||"Spieler",bestH:Math.max(SV.bestH||0,d.bestH||0),total:d.total||0,coins:d.coins||0,own:[...new Set([...df.own,...(d.own||[])])],eq:d.eq||df.eq};best=Math.max(best,d.best||0);try{localStorage.setItem("blobbo-best",best)}catch(e){}}
-      if(!d&&pendingName)SV.name=pendingName;
-      pendingName=null;
-      save();
-    }catch(e){}
+  cloudReady=false;clearTimeout(cloudT);
+  if(!u){refreshAuth();return}
+  try{
+    const d=await window.FB.load();
+    if(!window.FB.user||window.FB.user.uid!==u.uid)return;
+    if(d){
+      if(window.FB.backup)window.FB.backup(d).catch(()=>{});
+      const df=DEF(),same=SV.uid===u.uid&&(+SV.ts||0)>(+d.ts||0);
+      SV={uid:u.uid,ts:same?SV.ts:(+d.ts||0),
+        name:same?(SV.name||d.name):(d.name||pendingName||"Spieler"),
+        bestH:Math.max(same?cn(SV.bestH):0,cn(d.bestH)),
+        total:Math.max(same?cn(SV.total):0,cn(d.total!==undefined?d.total:d.coins)),
+        coins:same?cn(SV.coins):cn(d.coins),
+        own:[...new Set([...df.own,...(Array.isArray(d.own)?d.own:[]),...(same?SV.own:[])])],
+        eq:same?SV.eq:(d.eq||df.eq)};
+      best=Math.max(best,cn(d.best));try{localStorage.setItem("blobbo-best",best)}catch(e){}
+    }else{
+      SV.uid=u.uid;if(pendingName)SV.name=pendingName;
+    }
+    pendingName=null;loadTry=0;cloudReady=true;save();
+  }catch(e){
+    console.error(e);cloudSt="wait";refreshStatus();
+    if(window.FB&&window.FB.user)setTimeout(onUser,Math.min(30000,3000*(++loadTry)));
   }
-  refreshAuth();
-});
+  refreshAuth();refreshStatus();
+}
+addEventListener("fb-user",onUser);
+addEventListener("online",()=>{if(window.FB&&window.FB.user&&!cloudReady)onUser()});
 
 // ---------- Leaderboard ----------
 const BD={best:null,bestH:null,total:null,err:null},BL={best:false,bestH:false,total:false},MED=["#ffd23f","#c0c8d8","#e0955a"];
@@ -1069,7 +1125,18 @@ $("pinSet").onclick=()=>{const v=$("newPin").value;if(v.length<4){$("msg2").text
 $("wipe").onclick=()=>{if(!$("wipe").dataset.s){$("wipe").dataset.s=1;$("wipe").textContent="Sicher? Nochmal tippen";return}
   delete $("wipe").dataset.s;$("wipe").textContent="Fortschritt löschen";
   SV={coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}};best=0;
-  try{localStorage.removeItem("blobbo-best")}catch(e){}save();stat();$("msg2").textContent="Zurückgesetzt."};
+  try{localStorage.removeItem("blobbo-best")}catch(e){}cloudReady=false;clearTimeout(cloudT);saveLocal();stat();$("msg2").textContent="Nur lokal zurückgesetzt. Die Cloud-Daten bleiben erhalten (Seite neu laden stellt sie wieder her)."};
+$("restore").onclick=async()=>{
+  const F=window.FB;
+  if(!F||!F.user||!F.latestBackup){$("msg2").textContent="Nicht eingeloggt.";return}
+  try{
+    const b=await F.latestBackup();
+    if(!b){$("msg2").textContent="Kein Backup gefunden.";return}
+    SV={uid:F.user.uid,ts:Date.now(),name:b.name||SV.name,bestH:Math.max(cn(SV.bestH),cn(b.bestH)),total:Math.max(cn(SV.total),cn(b.total)),coins:cn(b.coins),own:[...new Set([...SV.own,...(Array.isArray(b.own)?b.own:[])])],eq:b.eq||SV.eq};
+    best=Math.max(best,cn(b.best));cloudReady=true;save();stat();
+    $("msg2").textContent="Backup vom "+(b.at?new Date(b.at).toLocaleDateString("de-DE"):"?")+" eingespielt."
+  }catch(e){$("msg2").textContent="Fehler: "+(e.code||e.message)}
+};
 
 reset();state="menu";
 (function loop(){update();draw();if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();requestAnimationFrame(loop)})();
@@ -1077,10 +1144,11 @@ reset();state="menu";
 </script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {getDatabase,ref,set,update,remove,onValue,get,onDisconnect} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import {getFirestore,doc,getDoc,setDoc,collection,query,orderBy,limit,getDocs} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,doc,getDoc,getDocFromServer,setDoc,collection,query,orderBy,limit,getDocs} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+function makeDb(a){try{return initializeFirestore(a,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})})}catch(e){return getFirestore(a)}}
 // >>> HIER DEINE FIREBASE-DATEN EINTRAGEN (Schritt 2 der Anleitung) <<<
 const firebaseConfig={
   apiKey:"AIzaSyCSgsgk8QDHION2oGghtl2YtkDHkqxatw8",
@@ -1093,14 +1161,17 @@ const firebaseConfig={
 };
 
 if(firebaseConfig.apiKey){
-  const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+  const app=initializeApp(firebaseConfig),auth=getAuth(app),db=makeDb(app);
   const pref=()=>doc(db,"players",auth.currentUser.uid);
   window.FB={
     user:null,
     register:(e,p)=>createUserWithEmailAndPassword(auth,e,p),
     login:(e,p)=>signInWithEmailAndPassword(auth,e,p),
     logout:()=>signOut(auth),
-    load:async()=>{const s=await getDoc(pref());return s.exists()?s.data():null},
+    load:async()=>{const s=await getDocFromServer(pref());return s.exists()?s.data():null},
+    backup:async d=>{const r=doc(db,"players",auth.currentUser.uid,"backups",new Date().toISOString().slice(0,10));const sn=await getDoc(r);if(!sn.exists())await setDoc(r,{...d,at:Date.now()})},
+    latestBackup:async()=>{const sn=await getDocs(query(collection(db,"players",auth.currentUser.uid,"backups"),orderBy("at","desc"),limit(1)));return sn.empty?null:sn.docs[0].data()},
+    resetPw:e=>sendPasswordResetEmail(auth,e),
     save:d=>setDoc(pref(),d),
     board:async f=>{const sn=await getDocs(query(collection(db,"leaderboard"),orderBy(f,"desc"),limit(30)));return sn.docs.map(d=>({id:d.id,...d.data()})).filter(e=>(e[f]||0)>0)},
     pushBoard:d=>setDoc(doc(db,"leaderboard",auth.currentUser.uid),d)
