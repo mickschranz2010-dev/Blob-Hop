@@ -50,6 +50,15 @@ canvas{border:5px solid var(--ink);border-radius:22px;box-shadow:0 8px 0 var(--i
 #auth .stats span{font-size:11px;color:#8a7ba8}
 #auth .idf{display:flex;align-items:center;gap:8px;border-top:3px dashed var(--ink);padding:6px 12px;font-size:13px}
 #auth .bar{flex:1;height:18px;background:repeating-linear-gradient(90deg,#2b2140 0 2px,transparent 2px 5px,#2b2140 5px 9px,transparent 9px 11px)}
+#auth .nm button{display:flex;align-items:center}
+#nameDlg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,33,64,.6)}
+#nameDlg[hidden]{display:none}
+#nameDlg .dlg{background:var(--card);color:var(--txt);border:4px solid var(--ink);border-radius:20px;box-shadow:0 6px 0 var(--ink);padding:16px;width:min(80vw,280px)}
+#nameDlg h3{margin:0 0 8px;font-size:26px;font-weight:400}
+#nameDlg input,#nameDlg button{font:inherit;font-size:18px;border:3px solid var(--ink);border-radius:12px;padding:6px 10px;margin:3px 3px 3px 0;background:#fff;color:#2b2140;width:100%;box-sizing:border-box}
+#nameDlg button{width:auto;cursor:pointer;background:#ffd23f}
+#nameDlg button.blue{background:#5bb8ff}#nameDlg button.red{background:#ff6b8b}
+#nameDlg p{margin:4px 0;min-height:1.2em;color:#ff6b8b}
 </style>
 </head>
 <body>
@@ -64,8 +73,7 @@ canvas{border:5px solid var(--ink);border-radius:22px;box-shadow:0 8px 0 var(--i
   <canvas id="avatar" width="120" height="120"></canvas>
   <div class="idi">
    <div class="lbl">NAME</div>
-   <div class="nm"><span id="nameTxt"></span><button id="nameEdit" title="Name ändern">✏️</button></div>
-   <div class="nb" id="nameBox" hidden><input id="nameIn" maxlength="14"><button id="nameOk" class="blue">✓</button></div>
+   <div class="nm"><span id="nameTxt"></span><button id="nameEdit" title="Name ändern" aria-label="Name ändern"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4.5 15.5L16 4l4 4L8.5 19.5z" fill="#fff" stroke="#2b2140" stroke-width="2" stroke-linejoin="round"/><path d="M13.5 6.5l4 4" stroke="#2b2140" stroke-width="2"/><path d="M3 21l1.5-5.5 4 4z" fill="#ff6b8b" stroke="#2b2140" stroke-width="2" stroke-linejoin="round"/></svg></button></div>
    <div class="lbl">E-MAIL</div><div class="sm" id="aMail2"></div>
   </div>
  </div>
@@ -74,7 +82,14 @@ canvas{border:5px solid var(--ink);border-radius:22px;box-shadow:0 8px 0 var(--i
 </div>
 <button id="aSave" class="blue">Jetzt speichern</button><button id="aLogout" class="red">Ausloggen</button></div>
 <p id="aMsg"></p><button id="aClose" class="red">Schließen</button>
+</div>
+<div id="nameDlg" hidden><div class="dlg">
+<h3>Neuer Name</h3>
+<input id="nameIn" maxlength="14" placeholder="Dein Name">
+<p id="nameErr"></p>
+<button id="nameOk" class="blue">Speichern</button><button id="nameNo" class="red">Abbrechen</button>
 </div></div>
+</div>
 <div id="adm" hidden><div class="box">
 <h2>Admin-Panel</h2>
 <div id="lock"><p id="pinInfo"></p><input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"><button id="pinGo">OK</button></div>
@@ -140,7 +155,7 @@ function chip(){
   rr(CH.x,CH.y,CH.w,CH.h,16);outline("#fffdf2");
   ctx.save();ctx.beginPath();ctx.arc(36,34,19,0,7);ctx.clip();
   ctx.fillStyle="#8fe3ff";ctx.fillRect(10,10,52,48);
-  preview(36,42,colV(SV.eq.col),SV.eq.hat,.7);
+  preview(36,27.4,colV(SV.eq.col),SV.eq.hat,.65);
   ctx.restore();
   ctx.beginPath();ctx.arc(36,34,19,0,7);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
   text(nm.length>9?nm.slice(0,8)+"…":nm,62,40,18,"#fff","left");
@@ -456,7 +471,7 @@ function drawAvatar(){
   const old=ctx,g=cv.getContext("2d");ctx=g;
   g.clearRect(0,0,cv.width,cv.height);g.fillStyle="#8fe3ff";g.fillRect(0,0,cv.width,cv.height);
   g.fillStyle="rgba(255,255,255,.85)";g.beginPath();g.arc(25,102,16,0,7);g.arc(48,94,20,0,7);g.arc(76,104,15,0,7);g.fill();
-  preview(60,76,colV(SV.eq.col),SV.eq.hat,1.5);ctx=old;
+  preview(60,65.7,colV(SV.eq.col),SV.eq.hat,1.3);ctx=old;
 }
 function refreshAuth(){
   const u=window.FB&&window.FB.user;$a("aOut").hidden=!!u;$a("aIn").hidden=!u;
@@ -465,8 +480,8 @@ function refreshAuth(){
   $a("stCoins").textContent=SV.coins;$a("stTotal").textContent=Math.max(SV.total||0,SV.coins);$a("stBest").textContent=best;
   $a("idNo").textContent=u.uid.slice(0,8).toUpperCase();drawAvatar();
 }
-function startEdit(){$a("nameBox").hidden=false;$a("nameIn").value=SV.name||"";setTimeout(()=>$a("nameIn").focus(),50)}
-function openAuth(){authOpen=true;$a("nameBox").hidden=true;$a("auth").hidden=false;$a("aMsg").textContent=window.FB?"":"Online-Funktionen nicht verfügbar (Firebase nicht eingerichtet oder offline).";refreshAuth()}
+function startEdit(){$a("nameErr").textContent="";$a("nameDlg").hidden=false;$a("nameIn").value=SV.name||"";setTimeout(()=>{$a("nameIn").focus();$a("nameIn").select()},50)}
+function openAuth(){authOpen=true;$a("nameDlg").hidden=true;$a("auth").hidden=false;$a("aMsg").textContent=window.FB?"":"Online-Funktionen nicht verfügbar (Firebase nicht eingerichtet oder offline).";refreshAuth()}
 $a("aClose").onclick=()=>{authOpen=false;$a("auth").hidden=true};
 function fbErr(e){const m={"auth/invalid-email":"Ungültige E-Mail.","auth/invalid-credential":"E-Mail oder Passwort falsch.","auth/email-already-in-use":"E-Mail ist schon registriert.","auth/weak-password":"Passwort: mindestens 6 Zeichen.","auth/missing-password":"Bitte Passwort eingeben.","auth/network-request-failed":"Keine Verbindung."};return m[e.code]||"Fehler: "+(e.code||e.message)}
 async function doAuth(kind){
@@ -485,10 +500,10 @@ $a("aSave").onclick=()=>{save();$a("aMsg").textContent="Gespeichert!"};
 $a("nameEdit").onclick=startEdit;
 function nameOk(){
   const n=$a("nameIn").value.trim().slice(0,14);
-  if(n.length<2){$a("aMsg").textContent="Mindestens 2 Zeichen.";return}
-  SV.name=n;save();$a("nameBox").hidden=true;refreshAuth();$a("aMsg").textContent="Name gespeichert!";beep(760,.1,"triangle");
+  if(n.length<2){$a("nameErr").textContent="Mindestens 2 Zeichen.";return}
+  SV.name=n;save();$a("nameDlg").hidden=true;refreshAuth();$a("aMsg").textContent="Name gespeichert!";beep(760,.1,"triangle");
 }
-$a("nameOk").onclick=nameOk;$a("nameIn").onkeydown=e=>{if(e.key==="Enter")nameOk()};
+$a("nameOk").onclick=nameOk;$a("nameNo").onclick=()=>{$a("nameDlg").hidden=true};$a("nameIn").onkeydown=e=>{if(e.key==="Enter")nameOk()};
 $a("aLogout").onclick=async()=>{
   try{await window.FB.logout()}catch(e){}
   SV=DEF();best=0;try{localStorage.removeItem("blobbo-best")}catch(e){}save();$a("aMsg").textContent="Ausgeloggt."
