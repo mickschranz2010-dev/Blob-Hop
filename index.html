@@ -135,7 +135,7 @@ let best=0;
 try{best=+localStorage.getItem("blobbo-best")||0}catch(e){}
 let state="menu",score=0,bonus=0,combo=0,comboT=0,shake=0,t=0,coinsTotal=0;
 let P,plats,coins,parts,pops,clouds,topY,maxH;
-const keys={};let ptr=null,rel=null;
+const keys={};let ptr=null,rel=null,holdDir=0;
 // ---------- Shop-Daten ----------
 const ITEMS={
  col:[{id:"orange",n:"Orange",p:0,v:"#ff8c42"},{id:"mint",n:"Minze",p:30,v:"#4fd6a4"},{id:"pink",n:"Bubblegum",p:40,v:"#ff7eb6"},{id:"blue",n:"Wolke",p:50,v:"#5bb8ff"},{id:"purple",n:"Traube",p:80,v:"#a77bff"},{id:"gold",n:"Gold",p:150,v:"#ffd23f"}],
@@ -282,6 +282,7 @@ function pop(x,y,txt,col="#fff"){pops.push({x,y,txt,col,l:1})}
 addEventListener("keydown",e=>{if(bindKey){if(e.key!=="Escape"){ST[bindKey]=e.key.toLowerCase();saveST();beep(760,.1,"triangle")}bindKey=null;e.preventDefault();return}if(admOpen||authOpen)return;seqBuf=(seqBuf+e.key).slice(-4);if(seqBuf==="2911"){seqBuf="";openAdmin();return}keys[e.key.toLowerCase()]=true;if((state==="shop"||state==="settings")&&e.key==="Escape")closeShop();if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
 addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 function gx(e){const r=c.getBoundingClientRect();return (e.clientX-r.left)/r.width*W}
+const dirOf=e=>{const r=c.getBoundingClientRect();return e.clientX<r.left+r.width/2?-1:1};
 function gy(e){const r=c.getBoundingClientRect();return (e.clientY-r.top)/r.height*H}
 addEventListener("pointerdown",e=>{
   if(admOpen||authOpen||e.target.closest("#adm,#auth"))return;
@@ -293,14 +294,14 @@ addEventListener("pointerdown",e=>{
   if((state==="menu"||state==="over")&&hit(x,y,AB)){openAuth();return}
   if((state==="menu"||state==="over")&&hit(x,y,GB)){state="settings";beep(500,.08,"triangle");return}
   if(state==="menu"&&x<60&&y>H-60){const n=performance.now();tapN=(n-tapT<2000)?tapN+1:1;tapT=n;if(tapN>=5){tapN=0;openAdmin();return}}
-  if(e.pointerType!=="mouse")rel={anchor:x,cur:x};
-  ptr=Math.max(0,Math.min(W,x));start();
+  if(e.pointerType!=="mouse"){holdDir=dirOf(e);ptr=null}else ptr=Math.max(0,Math.min(W,x));
+  start();
 });
 addEventListener("pointermove",e=>{
   if(ptr!==null||e.pointerType==="mouse")ptr=Math.max(0,Math.min(W,gx(e)));
-  if(rel&&e.pointerType!=="mouse"){const g=gx(e);rel.cur=g;if(g-rel.anchor>45)rel.anchor=g-45;if(g-rel.anchor<-45)rel.anchor=g+45}
+  if(holdDir&&e.pointerType!=="mouse")holdDir=dirOf(e);
 });
-const upF=e=>{if(e.pointerType!=="mouse"){ptr=null;rel=null}};
+const upF=e=>{if(e.pointerType!=="mouse"){ptr=null;holdDir=0}};
 addEventListener("pointerup",upF);addEventListener("pointercancel",upF);
 function start(){
   if(state==="play"||state==="shop"||state==="settings")return;
@@ -328,7 +329,7 @@ function update(){
   let ax=0;
   if(keys.arrowleft||keys[ST.kl])ax=-1;
   if(keys.arrowright||keys[ST.kr])ax=1;
-  if(rel){P.vx+=Math.max(-1,Math.min(1,(rel.cur-rel.anchor)/25))*.9}
+  if(holdDir)P.vx+=holdDir*.8;
   else if(ptr!==null){P.vx+=Math.max(-1,Math.min(1,(ptr-P.x)/30))*.9}
   else P.vx+=ax*.8;
   P.vx*=.86;
