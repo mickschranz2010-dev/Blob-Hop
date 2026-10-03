@@ -162,7 +162,7 @@ const ITEMS={
 let SV={coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}};
 try{const o=JSON.parse(localStorage.getItem("blobbo-save"));if(o&&o.own&&o.eq)SV=o}catch(e){}
 function save(){try{localStorage.setItem("blobbo-save",JSON.stringify(SV))}catch(e){}cloudSave()}
-function cloudSave(){const F=window.FB;if(F&&F.user){if(F.pushBoard)F.pushBoard({name:SV.name||"Spieler",best,total:Math.max(SV.total||0,SV.coins),col:SV.eq.col,hat:SV.eq.hat}).catch(()=>{});F.save({name:SV.name||"Spieler",total:SV.total||0,coins:SV.coins,own:SV.own,eq:SV.eq,best}).catch(()=>{})}}
+function cloudSave(){const F=window.FB;if(F&&F.user){if(F.pushBoard)F.pushBoard({name:SV.name||"Spieler",bestH:SV.bestH||0,best,total:Math.max(SV.total||0,SV.coins),col:SV.eq.col,hat:SV.eq.hat}).catch(()=>{});F.save({name:SV.name||"Spieler",bestH:SV.bestH||0,total:SV.total||0,coins:SV.coins,own:SV.own,eq:SV.eq,best}).catch(()=>{})}}
 const MB={x:120,y:432,w:160,h:44},AB={x:120,y:484,w:160,h:44},GB={x:120,y:536,w:160,h:44};
 function acctBtn(){btn(AB.x,AB.y,AB.w,AB.h,(window.FB&&window.FB.user)?"ACCOUNT":"LOG IN","#5bb8ff");btn(GB.x,GB.y,GB.w,GB.h,"SETTINGS","#a77bff");btn(MB.x,MB.y,MB.w,MB.h,"MULTIPLAYER","#6bd96b")}
 const CH={x:10,y:10,w:158,h:48};
@@ -460,7 +460,7 @@ let overAt=0;
 function gameOver(){
   state="over";overAt=t;shake=14;beep(300,.5,"sawtooth",.08,-250);
   const total=Math.floor(score+bonus);
-  gain=coinsTotal+Math.floor(total/200);SV.coins+=gain;SV.total=(SV.total||0)+gain;if(total>best){best=total;try{localStorage.setItem("blobbo-best",best)}catch(e){}}
+  gain=coinsTotal+Math.floor(total/200);SV.coins+=gain;SV.total=(SV.total||0)+gain;const hm=Math.floor(maxH/10);if(hm>(SV.bestH||0))SV.bestH=hm;if(total>best){best=total;try{localStorage.setItem("blobbo-best",best)}catch(e){}}
   save();
   burst(P.x,H-30,"#ff6b8b",30,7);
   if(MP.active)mpDied(total);
@@ -603,6 +603,7 @@ function draw(){
 
   if(state==="play"){
     text(Math.floor(score+bonus),16,44,40,"#fff","left");
+    text("Höhe "+Math.floor(maxH/10)+" m",16,68,20,"#bdeaff","left");
     text("Rekord "+best,W-16,30,20,"#ffd23f","right");
     if(combo>1){
       text("Combo x"+combo,W-16,60,22,"#ff6b8b","right");
@@ -626,18 +627,19 @@ function draw(){
     text("OOPS!",W/2,130,80,"#ff6b8b");
     const total=Math.floor(score+bonus);
     text("Punkte: "+total,W/2,205,38);
-    text("Münzen: "+coinsTotal,W/2,245,26,"#ffd23f");
-    text(total>=best&&total>0?"Neuer Rekord!":"Rekord "+best,W/2,285,26,"#ffd23f");
-    text("+"+gain+" Münzen im Beutel ("+SV.coins+")",W/2,320,20,"#ffd23f");
+    text("Höhe: "+Math.floor(maxH/10)+" m",W/2,236,22,"#bdeaff");
+    text("Münzen: "+coinsTotal,W/2,270,26,"#ffd23f");
+    text(total>=best&&total>0?"Neuer Rekord!":"Rekord "+best,W/2,302,26,"#ffd23f");
+    text("+"+gain+" Münzen im Beutel ("+SV.coins+")",W/2,332,20,"#ffd23f");
     btn(SB.x,SB.y,SB.w,SB.h,"SHOP","#ff6b8b");acctBtn();
-    if(Math.floor(t/20)%2===0)text("Tippen für noch eine Runde",W/2,362,24);
+    if(Math.floor(t/20)%2===0)text("Tippen für noch eine Runde",W/2,368,24);
   }
 }
 
 // ---------- Account (Firebase) ----------
 let authOpen=false,pendingName=null;
 const $a=id=>document.getElementById(id);
-const DEF=()=>({name:"Spieler",total:0,coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}});
+const DEF=()=>({name:"Spieler",bestH:0,total:0,coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}});
 function drawAvatar(){
   const cv=$a("avatar");if(!cv)return;
   const old=ctx,g=cv.getContext("2d");ctx=g;
@@ -685,7 +687,7 @@ addEventListener("fb-user",async()=>{
   if(u){
     try{
       const d=await window.FB.load();
-      if(d){const df=DEF();SV={name:d.name||pendingName||"Spieler",total:d.total||0,coins:d.coins||0,own:[...new Set([...df.own,...(d.own||[])])],eq:d.eq||df.eq};best=Math.max(best,d.best||0);try{localStorage.setItem("blobbo-best",best)}catch(e){}}
+      if(d){const df=DEF();SV={name:d.name||pendingName||"Spieler",bestH:Math.max(SV.bestH||0,d.bestH||0),total:d.total||0,coins:d.coins||0,own:[...new Set([...df.own,...(d.own||[])])],eq:d.eq||df.eq};best=Math.max(best,d.best||0);try{localStorage.setItem("blobbo-best",best)}catch(e){}}
       if(!d&&pendingName)SV.name=pendingName;
       pendingName=null;
       save();
@@ -695,7 +697,7 @@ addEventListener("fb-user",async()=>{
 });
 
 // ---------- Leaderboard ----------
-const BD={best:null,total:null,err:null},BL={best:false,total:false},MED=["#ffd23f","#c0c8d8","#e0955a"];
+const BD={best:null,bestH:null,total:null,err:null},BL={best:false,bestH:false,total:false},MED=["#ffd23f","#c0c8d8","#e0955a"];
 let btab="best",boardScroll=0;
 const LB={x:176,y:10,w:48,h:48};
 const skinCol=id=>{const c=ITEMS.col.find(i=>i.id===id);return c?c.v:"#ff8c42"};
@@ -715,7 +717,7 @@ async function loadBoard(tb){
 const boardMax=()=>Math.max(0,((BD[btab]||[]).length)*72+8-440);
 function boardClick(x,y){
   if(hit(x,y,{x:120,y:584,w:160,h:40})){closeShop();return}
-  [["best",20],["total",205]].forEach(([id,tx])=>{if(hit(x,y,{x:tx,y:82,w:175,h:40})&&btab!==id){btab=id;boardScroll=0;loadBoard(id);beep(600,.05)}});
+  [["best",20],["bestH",142],["total",265]].forEach(([id,tx])=>{if(hit(x,y,{x:tx,y:82,w:115,h:40})&&btab!==id){btab=id;boardScroll=0;loadBoard(id);beep(600,.05)}});
 }
 function drawBoard(){
   ctx.fillStyle="#bdeaff";ctx.fillRect(0,0,W,H);
@@ -741,14 +743,15 @@ function drawBoard(){
     text((e.name||"Spieler").slice(0,14),146,y+30,19,"#fff","left");
     if(mine)text("Das bist du!",146,y+52,13,"#6bd96b","left");
     text(Math.floor(val).toLocaleString("de-DE"),366,y+36,26,"#ffd23f","right");
-    text(btab==="best"?"Punkte":"Münzen",366,y+54,13,"#fff","right");
+    text(btab==="best"?"Punkte":btab==="bestH"?"Meter":"Münzen",366,y+54,13,"#fff","right");
   });
   ctx.restore();
   shad(60,10,280,56,18);rr(60,10,280,56,18);outline("#ffd23f");text("LEADERBOARD",W/2,50,34);
-  [["best","Rekord",20],["total","Münzen",205]].forEach(([id,l,tx])=>{
-    btn3d(tx,82,175,38,l,btab===id?"#ff6b8b":"#c9b8ff",22);
-    if(id==="best"){ctx.beginPath();starPath(tx+28,101,9);ctx.fillStyle="#ffd23f";ctx.fill()}
-    else{ctx.beginPath();ctx.arc(tx+28,101,8,0,7);outline("#ffd23f")}
+  [["best","Rekord",20],["bestH","Höhe",142],["total","Münzen",265]].forEach(([id,l,tx])=>{
+    btn3d(tx,82,115,38,l,btab===id?"#ff6b8b":"#c9b8ff",20);
+    if(id==="best"){ctx.beginPath();starPath(tx+17,101,8);ctx.fillStyle="#ffd23f";ctx.fill()}
+    else if(id==="bestH"){ctx.beginPath();ctx.moveTo(tx+17,92);ctx.lineTo(tx+10,105);ctx.lineTo(tx+24,105);ctx.closePath();outline("#6bd96b")}
+    else{ctx.beginPath();ctx.arc(tx+17,101,7,0,7);outline("#ffd23f")}
   });
   if(!list.length){
     if(BL[btab])text("Lade..."+".".repeat((t/20|0)%3),W/2,300,26,"#fff");
