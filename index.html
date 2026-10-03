@@ -526,6 +526,7 @@ function text(s,x,y,size,col="#fff",align="center"){
 
 // ---------- Draw ----------
 function draw(){
+  ctx.setTransform(2,0,0,2,0,0);
   ctx.save();
   if(ST.shake&&shake>.5)ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
   ctx.fillStyle=skyColor();ctx.fillRect(-20,-20,W+40,H+40);
