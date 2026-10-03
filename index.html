@@ -165,7 +165,7 @@ try{const o=JSON.parse(localStorage.getItem("blobbo-save"));if(o&&o.own&&o.eq)SV
 function saveLocal(){SV.ts=Date.now();try{localStorage.setItem("blobbo-save",JSON.stringify(SV))}catch(e){}}
 function save(){saveLocal();cloudSave()}
 const cn=v=>{v=Math.floor(+v);return isFinite(v)&&v>0?Math.min(v,1e9):0};
-let cloudReady=false,cloudT=null,cloudFail=0,cloudSt="";
+let cloudReady=false,cloudT=null,cloudFail=0,cloudSt="",bestHDirty=false;
 function cloudSave(){const F=window.FB;if(!F||!F.user||!cloudReady)return;clearTimeout(cloudT);cloudT=setTimeout(cloudFlush,600)}
 async function cloudFlush(){
   const F=window.FB;if(!F||!F.user||!cloudReady)return false;
@@ -175,8 +175,7 @@ async function cloudFlush(){
   const lb={name:nm,bestH:data.bestH,best:data.best,total:data.total,col:SV.eq.col,hat:SV.eq.hat};
   let ok=false;
   try{
-    if(F.pushBoard)F.pushBoard(lb).catch(e=>console.error("Leaderboard:",e));
-    await Promise.race([F.save(data),new Promise((_,rej)=>setTimeout(()=>rej({code:"timeout"}),8000))]);
+    await Promise.race([Promise.all([F.save(data),F.pushBoard?F.pushBoard(lb):0]),new Promise((_,rej)=>setTimeout(()=>rej({code:"timeout"}),8000))]);
     cloudFail=0;ok=true;cloudSt="ok:"+new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
   }catch(e){
     console.error(e);
@@ -546,6 +545,7 @@ function update(){
   // camera
   if(P.y<H*.4){
     const d=H*.4-P.y;P.y=H*.4;maxH+=d;score=maxH/10;
+    const hm2=Math.floor(maxH/10);if(!god&&hm2>(SV.bestH||0)){SV.bestH=hm2;bestHDirty=true}
     plats.forEach(p=>p.y+=d);coins.forEach(k=>k.y+=d);topY+=d;
     parts.forEach(q=>q.y+=d);pops.forEach(q=>q.y+=d);
     clouds.forEach(cl=>{cl.y+=d*.3*cl.s;if(cl.y>H+40){cl.y=-40;cl.x=Math.random()*W}});
@@ -554,6 +554,7 @@ function update(){
   plats=plats.filter(p=>p.y<H+60);coins=coins.filter(k=>k.y<H+60&&!k.got);
   if(P.y>H+40){if(god){P.y=H-60;P.vy=-14;P.sx=1.4;P.sy=.6}else gameOver()}
   if(MP.active&&state==="play")mpTick();
+  if(bestHDirty&&t%300===0){bestHDirty=false;save()}
   updFx();
 }
 function updFx(){
@@ -733,7 +734,7 @@ async function onUser(){
       const df=DEF(),same=SV.uid===u.uid&&(+SV.ts||0)>(+d.ts||0);
       SV={uid:u.uid,ts:same?SV.ts:(+d.ts||0),
         name:same?(SV.name||d.name):(d.name||pendingName||"Spieler"),
-        bestH:Math.max(same?cn(SV.bestH):0,cn(d.bestH)),
+        bestH:Math.max(cn(SV.bestH),cn(d.bestH)),
         total:Math.max(same?cn(SV.total):0,cn(d.total!==undefined?d.total:d.coins)),
         coins:same?cn(SV.coins):cn(d.coins),
         own:[...new Set([...df.own,...(Array.isArray(d.own)?d.own:[]),...(same?SV.own:[])])],
@@ -1174,7 +1175,12 @@ if(firebaseConfig.apiKey){
     resetPw:e=>sendPasswordResetEmail(auth,e),
     save:d=>setDoc(pref(),d),
     board:async f=>{const sn=await getDocs(query(collection(db,"leaderboard"),orderBy(f,"desc"),limit(30)));return sn.docs.map(d=>({id:d.id,...d.data()})).filter(e=>(e[f]||0)>0)},
-    pushBoard:d=>setDoc(doc(db,"leaderboard",auth.currentUser.uid),d)
+    pushBoard:async d=>{
+      const r=doc(db,"leaderboard",auth.currentUser.uid),sn=await getDocFromServer(r),c=sn.exists()?sn.data():{};
+      const m={...d,best:Math.max(d.best,+c.best||0),bestH:Math.max(d.bestH,+c.bestH||0),total:Math.max(d.total,+c.total||0)};
+      if(sn.exists()&&["best","bestH","total","name","col","hat"].every(k=>m[k]===c[k]))return;
+      await setDoc(r,m);
+    }
   };
   if(firebaseConfig.databaseURL.startsWith("https://")){
     const rdb=getDatabase(app,firebaseConfig.databaseURL);
