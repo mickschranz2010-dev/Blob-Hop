@@ -32,14 +32,47 @@ canvas{border:5px solid var(--ink);border-radius:22px;box-shadow:0 8px 0 var(--i
 #auth button.red{background:#ff6b8b}#auth button.blue{background:#5bb8ff}
 #auth p{margin:6px 0;min-height:1.2em}
 #auth input{width:100%;box-sizing:border-box}
+#auth .idc{border:4px solid var(--ink);border-radius:18px;overflow:hidden;background:repeating-linear-gradient(45deg,#fff6d6 0 12px,#fff0bd 12px 24px);color:#2b2140;box-shadow:0 4px 0 var(--ink);margin-bottom:8px}
+#auth .idh{background:#ff6b8b;color:#fff;font-size:22px;letter-spacing:2px;padding:4px 10px;border-bottom:4px solid var(--ink);text-shadow:2px 2px 0 #2b2140;display:flex;justify-content:space-between}
+#auth .idb{display:flex;gap:12px;padding:12px}
+#auth #avatar{width:96px;height:96px;border:4px solid var(--ink);border-radius:14px;transform:rotate(-3deg);flex:none;background:#8fe3ff}
+#auth .idi{min-width:0;flex:1}
+#auth .lbl{font-size:12px;letter-spacing:1px;color:#8a7ba8;margin-top:4px}
+#auth .nm{font-size:26px;display:flex;align-items:center;gap:4px;line-height:1.1}
+#auth .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#auth .nm button,#auth .nb button{padding:1px 6px;font-size:16px;margin:0}
+#auth .nb{display:flex;gap:4px}
+#auth .nb input{min-width:0;font-size:18px;padding:3px 6px;margin:0}
+#auth .sm{font-size:13px;overflow:hidden;text-overflow:ellipsis}
+#auth .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 12px 10px}
+#auth .stats div{background:#fff;border:3px solid var(--ink);border-radius:10px;text-align:center;padding:3px 2px}
+#auth .stats b{display:block;font-size:22px;font-weight:400}
+#auth .stats span{font-size:11px;color:#8a7ba8}
+#auth .idf{display:flex;align-items:center;gap:8px;border-top:3px dashed var(--ink);padding:6px 12px;font-size:13px}
+#auth .bar{flex:1;height:18px;background:repeating-linear-gradient(90deg,#2b2140 0 2px,transparent 2px 5px,#2b2140 5px 9px,transparent 9px 11px)}
 </style>
 </head>
 <body>
 <canvas id="c" aria-label="Blobbo Hop Spiel"></canvas>
 <div id="auth" hidden><div class="box">
 <h2>Account</h2>
-<div id="aOut"><input id="aMail" type="email" autocomplete="email" placeholder="E-Mail"><input id="aPw" type="password" autocomplete="current-password" placeholder="Passwort (min. 6 Zeichen)"><button id="aLogin" class="blue">Einloggen</button><button id="aReg">Registrieren</button></div>
-<div id="aIn" hidden><p id="aWho"></p><button id="aSave" class="blue">Jetzt speichern</button><button id="aLogout" class="red">Ausloggen</button></div>
+<div id="aOut"><input id="aName" maxlength="14" autocomplete="nickname" placeholder="Spielername (zum Registrieren)"><input id="aMail" type="email" autocomplete="email" placeholder="E-Mail"><input id="aPw" type="password" autocomplete="current-password" placeholder="Passwort (min. 6 Zeichen)"><button id="aLogin" class="blue">Einloggen</button><button id="aReg">Registrieren</button></div>
+<div id="aIn" hidden>
+<div class="idc">
+ <div class="idh"><span>BLOBBO-AUSWEIS</span><span>★</span></div>
+ <div class="idb">
+  <canvas id="avatar" width="120" height="120"></canvas>
+  <div class="idi">
+   <div class="lbl">NAME</div>
+   <div class="nm"><span id="nameTxt"></span><button id="nameEdit" title="Name ändern">✏️</button></div>
+   <div class="nb" id="nameBox" hidden><input id="nameIn" maxlength="14"><button id="nameOk" class="blue">✓</button></div>
+   <div class="lbl">E-MAIL</div><div class="sm" id="aMail2"></div>
+  </div>
+ </div>
+ <div class="stats"><div><b id="stCoins">0</b><span>Münzen</span></div><div><b id="stTotal">0</b><span>Gesamt</span></div><div><b id="stBest">0</b><span>Highscore</span></div></div>
+ <div class="idf"><span>ID <span id="idNo"></span></span><div class="bar"></div></div>
+</div>
+<button id="aSave" class="blue">Jetzt speichern</button><button id="aLogout" class="red">Ausloggen</button></div>
 <p id="aMsg"></p><button id="aClose" class="red">Schließen</button>
 </div></div>
 <div id="adm" hidden><div class="box">
@@ -59,7 +92,7 @@ canvas{border:5px solid var(--ink);border-radius:22px;box-shadow:0 8px 0 var(--i
 <script>
 (()=>{
 const W=400,H=640,INK="#2b2140";
-const c=document.getElementById("c"),ctx=c.getContext("2d");
+const c=document.getElementById("c");let ctx=c.getContext("2d");
 c.width=W*2;c.height=H*2;ctx.scale(2,2);
 function fit(){const pad=24,s=Math.min((innerWidth-pad)/W,(innerHeight-pad-12)/H);c.style.width=W*s+"px";c.style.height=H*s+"px"}
 addEventListener("resize",fit);fit();
@@ -97,9 +130,22 @@ const ITEMS={
 let SV={coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}};
 try{const o=JSON.parse(localStorage.getItem("blobbo-save"));if(o&&o.own&&o.eq)SV=o}catch(e){}
 function save(){try{localStorage.setItem("blobbo-save",JSON.stringify(SV))}catch(e){}cloudSave()}
-function cloudSave(){const F=window.FB;if(F&&F.user)F.save({coins:SV.coins,own:SV.own,eq:SV.eq,best}).catch(()=>{})}
+function cloudSave(){const F=window.FB;if(F&&F.user)F.save({name:SV.name||"Spieler",total:SV.total||0,coins:SV.coins,own:SV.own,eq:SV.eq,best}).catch(()=>{})}
 const AB={x:120,y:536,w:160,h:44},GB={x:120,y:586,w:160,h:44};
 function acctBtn(){btn(AB.x,AB.y,AB.w,AB.h,(window.FB&&window.FB.user)?"ACCOUNT":"LOG IN","#5bb8ff");btn(GB.x,GB.y,GB.w,GB.h,"SETTINGS","#a77bff")}
+const CH={x:10,y:10,w:158,h:48};
+function pencil(x,y){ctx.save();ctx.translate(x,y);ctx.rotate(.8);rr(-3,-10,6,15,1);outline("#ffd23f");ctx.beginPath();ctx.moveTo(-3,5);ctx.lineTo(3,5);ctx.lineTo(0,11);ctx.closePath();outline("#ffe9a8");ctx.restore()}
+function chip(){
+  const u=window.FB&&window.FB.user,nm=u?(SV.name||"Spieler"):"Gast";
+  rr(CH.x,CH.y,CH.w,CH.h,16);outline("#fffdf2");
+  ctx.save();ctx.beginPath();ctx.arc(36,34,19,0,7);ctx.clip();
+  ctx.fillStyle="#8fe3ff";ctx.fillRect(10,10,52,48);
+  preview(36,42,colV(SV.eq.col),SV.eq.hat,.7);
+  ctx.restore();
+  ctx.beginPath();ctx.arc(36,34,19,0,7);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
+  text(nm.length>9?nm.slice(0,8)+"…":nm,62,40,18,"#fff","left");
+  if(u)pencil(152,34);
+}
 function colV(id){return ITEMS.col.find(i=>i.id===id).v}
 let ovr=null,tab="col",msg="",msgT=0,gain=0;
 const SB={x:120,y:486,w:160,h:44};
@@ -111,9 +157,9 @@ function drawHat(h){
   else if(h==="crown"){ctx.beginPath();ctx.moveTo(-14,-14);ctx.lineTo(-15,-32);ctx.lineTo(-7,-23);ctx.lineTo(0,-34);ctx.lineTo(7,-23);ctx.lineTo(15,-32);ctx.lineTo(14,-14);ctx.closePath();outline("#ffd23f")}
   else if(h==="halo"){ctx.beginPath();ctx.ellipse(0,-30+Math.sin(t*.1)*2,14,5,0,0,7);ctx.lineWidth=8;ctx.strokeStyle=INK;ctx.stroke();ctx.lineWidth=4;ctx.strokeStyle="#ffd23f";ctx.stroke()}
 }
-function preview(x,y,col,hat){
+function preview(x,y,col,hat,sc=1.1){
   const sp=P;ovr={col,hat};
-  P={x,y,vx:0,vy:0,sx:1.1,sy:1.1,face:1,r:19};drawBlob();P=sp;ovr=null;
+  P={x,y,vx:0,vy:0,sx:sc,sy:sc,face:1,r:19};drawBlob();P=sp;ovr=null;
 }
 function closeShop(){reset();state="menu";beep(500,.08,"triangle")}
 function shopClick(x,y){
@@ -221,9 +267,10 @@ c.addEventListener("pointerdown",e=>{
   if(state==="shop"){shopClick(x,y);return}
   if(state==="settings"){setClick(x,y);return}
   if((state==="menu"||state==="over")&&hit(x,y,SB)){state="shop";beep(500,.08,"triangle");return}
+  if(state==="menu"&&hit(x,y,CH)){openAuth();if(window.FB&&window.FB.user&&x>CH.x+CH.w-34)startEdit();return}
   if((state==="menu"||state==="over")&&hit(x,y,AB)){openAuth();return}
   if((state==="menu"||state==="over")&&hit(x,y,GB)){state="settings";beep(500,.08,"triangle");return}
-  if(state==="menu"&&x<70&&y<70){const n=performance.now();tapN=(n-tapT<2000)?tapN+1:1;tapT=n;if(tapN>=5){tapN=0;openAdmin();return}}
+  if(state==="menu"&&x<60&&y>H-60){const n=performance.now();tapN=(n-tapT<2000)?tapN+1:1;tapT=n;if(tapN>=5){tapN=0;openAdmin();return}}
   ptr=x;start();
 });
 addEventListener("pointermove",e=>{if(ptr!==null||e.pointerType==="mouse")ptr=gx(e)});
@@ -237,7 +284,7 @@ let overAt=0;
 function gameOver(){
   state="over";overAt=t;shake=14;beep(300,.5,"sawtooth",.08,-250);
   const total=Math.floor(score+bonus);
-  gain=coinsTotal+Math.floor(total/200);SV.coins+=gain;if(total>best){best=total;try{localStorage.setItem("blobbo-best",best)}catch(e){}}
+  gain=coinsTotal+Math.floor(total/200);SV.coins+=gain;SV.total=(SV.total||0)+gain;if(total>best){best=total;try{localStorage.setItem("blobbo-best",best)}catch(e){}}
   save();
   burst(P.x,H-30,"#ff6b8b",30,7);
 }
@@ -384,7 +431,7 @@ function draw(){
     text("Tippen oder Leertaste zum Start",W/2,392,22);
     text("Pfeiltasten / A D / Finger ziehen",W/2,420,18,"#ffe9a8");
     text("Münzen sammeln = Combo, rote Feder = Turbo",W/2,446,16,"#ffe9a8");
-    btn(SB.x,SB.y,SB.w,SB.h,"SHOP","#ff6b8b");acctBtn();
+    btn(SB.x,SB.y,SB.w,SB.h,"SHOP","#ff6b8b");acctBtn();chip();
     if(best)text("Rekord "+best,W-16,34,22,"#ffd23f","right");
   }
   if(state==="over"){
@@ -401,21 +448,47 @@ function draw(){
 }
 
 // ---------- Account (Firebase) ----------
-let authOpen=false;
+let authOpen=false,pendingName=null;
 const $a=id=>document.getElementById(id);
-const DEF=()=>({coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}});
-function refreshAuth(){const u=window.FB&&window.FB.user;$a("aOut").hidden=!!u;$a("aIn").hidden=!u;if(u)$a("aWho").textContent="Eingeloggt als "+u.email}
-function openAuth(){authOpen=true;$a("auth").hidden=false;$a("aMsg").textContent=window.FB?"":"Online-Funktionen nicht verfügbar (Firebase nicht eingerichtet oder offline).";refreshAuth()}
+const DEF=()=>({name:"Spieler",total:0,coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}});
+function drawAvatar(){
+  const cv=$a("avatar");if(!cv)return;
+  const old=ctx,g=cv.getContext("2d");ctx=g;
+  g.clearRect(0,0,cv.width,cv.height);g.fillStyle="#8fe3ff";g.fillRect(0,0,cv.width,cv.height);
+  g.fillStyle="rgba(255,255,255,.85)";g.beginPath();g.arc(25,102,16,0,7);g.arc(48,94,20,0,7);g.arc(76,104,15,0,7);g.fill();
+  preview(60,76,colV(SV.eq.col),SV.eq.hat,1.5);ctx=old;
+}
+function refreshAuth(){
+  const u=window.FB&&window.FB.user;$a("aOut").hidden=!!u;$a("aIn").hidden=!u;
+  if(!u)return;
+  $a("nameTxt").textContent=SV.name||"Spieler";$a("aMail2").textContent=u.email;
+  $a("stCoins").textContent=SV.coins;$a("stTotal").textContent=Math.max(SV.total||0,SV.coins);$a("stBest").textContent=best;
+  $a("idNo").textContent=u.uid.slice(0,8).toUpperCase();drawAvatar();
+}
+function startEdit(){$a("nameBox").hidden=false;$a("nameIn").value=SV.name||"";setTimeout(()=>$a("nameIn").focus(),50)}
+function openAuth(){authOpen=true;$a("nameBox").hidden=true;$a("auth").hidden=false;$a("aMsg").textContent=window.FB?"":"Online-Funktionen nicht verfügbar (Firebase nicht eingerichtet oder offline).";refreshAuth()}
 $a("aClose").onclick=()=>{authOpen=false;$a("auth").hidden=true};
 function fbErr(e){const m={"auth/invalid-email":"Ungültige E-Mail.","auth/invalid-credential":"E-Mail oder Passwort falsch.","auth/email-already-in-use":"E-Mail ist schon registriert.","auth/weak-password":"Passwort: mindestens 6 Zeichen.","auth/missing-password":"Bitte Passwort eingeben.","auth/network-request-failed":"Keine Verbindung."};return m[e.code]||"Fehler: "+(e.code||e.message)}
 async function doAuth(kind){
   if(!window.FB){$a("aMsg").textContent="Firebase ist nicht eingerichtet.";return}
+  if(kind==="register"){
+    const nm=$a("aName").value.trim();
+    if(nm.length<2){$a("aMsg").textContent="Bitte gib einen Namen ein (mind. 2 Zeichen).";return}
+    pendingName=nm;
+  }
   $a("aMsg").textContent="Einen Moment...";
   try{await window.FB[kind]($a("aMail").value.trim(),$a("aPw").value);$a("aMsg").textContent=kind==="login"?"Willkommen zurück!":"Account erstellt!";$a("aPw").value=""}
-  catch(e){$a("aMsg").textContent=fbErr(e)}
+  catch(e){pendingName=null;$a("aMsg").textContent=fbErr(e)}
 }
 $a("aLogin").onclick=()=>doAuth("login");$a("aReg").onclick=()=>doAuth("register");
 $a("aSave").onclick=()=>{save();$a("aMsg").textContent="Gespeichert!"};
+$a("nameEdit").onclick=startEdit;
+function nameOk(){
+  const n=$a("nameIn").value.trim().slice(0,14);
+  if(n.length<2){$a("aMsg").textContent="Mindestens 2 Zeichen.";return}
+  SV.name=n;save();$a("nameBox").hidden=true;refreshAuth();$a("aMsg").textContent="Name gespeichert!";beep(760,.1,"triangle");
+}
+$a("nameOk").onclick=nameOk;$a("nameIn").onkeydown=e=>{if(e.key==="Enter")nameOk()};
 $a("aLogout").onclick=async()=>{
   try{await window.FB.logout()}catch(e){}
   SV=DEF();best=0;try{localStorage.removeItem("blobbo-best")}catch(e){}save();$a("aMsg").textContent="Ausgeloggt."
@@ -425,7 +498,9 @@ addEventListener("fb-user",async()=>{
   if(u){
     try{
       const d=await window.FB.load();
-      if(d){const df=DEF();SV={coins:d.coins||0,own:[...new Set([...df.own,...(d.own||[])])],eq:d.eq||df.eq};best=Math.max(best,d.best||0);try{localStorage.setItem("blobbo-best",best)}catch(e){}}
+      if(d){const df=DEF();SV={name:d.name||pendingName||"Spieler",total:d.total||0,coins:d.coins||0,own:[...new Set([...df.own,...(d.own||[])])],eq:d.eq||df.eq};best=Math.max(best,d.best||0);try{localStorage.setItem("blobbo-best",best)}catch(e){}}
+      if(!d&&pendingName)SV.name=pendingName;
+      pendingName=null;
       save();
     }catch(e){}
   }
