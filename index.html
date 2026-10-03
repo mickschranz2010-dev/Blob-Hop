@@ -382,12 +382,14 @@ addEventListener("pointerdown",e=>{
   start();
 });
 addEventListener("pointermove",e=>{
-  if(ptr!==null||e.pointerType==="mouse")ptr=Math.max(0,Math.min(W,gx(e)));
+  if(e.pointerType==="mouse")ptr=(e.buttons&1)?Math.max(0,Math.min(W,gx(e))):null;
+  else if(ptr!==null)ptr=Math.max(0,Math.min(W,gx(e)));
   if(holdDir&&e.pointerType!=="mouse")holdDir=dirOf(e);
   if(sd){const dy=gy(e)-sd.y;if(Math.abs(dy)>8)sd.m=true;if(sd.m){if(sd.b)boardScroll=sd.sc-dy;else shopScroll=sd.sc-dy}}
 });
-const upF=e=>{if(sd){if(!sd.m&&e.type==="pointerup"){if(sd.b)boardClick(sd.x,sd.y);else shopClick(sd.x,sd.y)}sd=null}if(e.pointerType!=="mouse"){ptr=null;holdDir=0}};
+const upF=e=>{if(sd){if(!sd.m&&e.type==="pointerup"){if(sd.b)boardClick(sd.x,sd.y);else shopClick(sd.x,sd.y)}sd=null}ptr=null;holdDir=0};
 addEventListener("wheel",e=>{if(state==="shop")shopScroll+=e.deltaY;if(state==="board")boardScroll+=e.deltaY},{passive:true});
+addEventListener("blur",()=>{ptr=null;holdDir=0});
 addEventListener("pointerup",upF);addEventListener("pointercancel",upF);
 function start(){
   if(state==="play"||state==="shop"||state==="settings"||state==="mp"||state==="lobby"||state==="board"||state==="spectate")return;
@@ -552,7 +554,7 @@ function draw(){
     ctx.save();ctx.translate(W/2,170);ctx.rotate(Math.sin(t*.04)*.05);
     text("BLOBBO",0,0,84,"#ffd23f");text("HOP!",0,72,84,"#ff6b8b");ctx.restore();
     text("Tippen oder Leertaste zum Start",W/2,292,22);
-    text("Pfeiltasten / "+kname(ST.kl)+" "+kname(ST.kr)+" / Finger links/rechts halten",W/2,320,18,"#ffe9a8");
+    text("Pfeiltasten / "+kname(ST.kl)+" "+kname(ST.kr)+" / Maus oder Finger halten",W/2,320,18,"#ffe9a8");
     text("Münzen sammeln = Combo, rote Feder = Turbo",W/2,344,16,"#ffe9a8");
     btn(SB.x,SB.y,SB.w,SB.h,"SHOP","#ff6b8b");acctBtn();chip();
     if(best)text("Rekord "+best,W-16,34,22,"#ffd23f","right");
