@@ -23,10 +23,25 @@ canvas{border:5px solid var(--ink);border-radius:22px;box-shadow:0 8px 0 var(--i
 #adm input{background:#fff;cursor:text;width:120px;user-select:text;-webkit-user-select:text}
 #adm button.red{background:#ff6b8b}#adm button.blue{background:#5bb8ff}
 #adm p{margin:6px 0;min-height:1.2em}
+#auth{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,33,64,.75);touch-action:auto;z-index:9}
+#auth[hidden]{display:none}
+#auth .box{background:var(--card);color:var(--txt);border:4px solid var(--ink);border-radius:20px;box-shadow:0 6px 0 var(--ink);padding:16px;width:min(92vw,340px);max-height:90%;overflow:auto;letter-spacing:.5px}
+#auth h2{margin:0 0 10px;font-size:30px;font-weight:400}
+#auth button,#auth input{font:inherit;font-size:18px;border:3px solid var(--ink);border-radius:12px;padding:6px 10px;margin:3px 3px 3px 0;background:#ffd23f;color:#2b2140;cursor:pointer}
+#auth input{background:#fff;cursor:text;width:120px;user-select:text;-webkit-user-select:text}
+#auth button.red{background:#ff6b8b}#auth button.blue{background:#5bb8ff}
+#auth p{margin:6px 0;min-height:1.2em}
+#auth input{width:100%;box-sizing:border-box}
 </style>
 </head>
 <body>
 <canvas id="c" aria-label="Blobbo Hop Spiel"></canvas>
+<div id="auth" hidden><div class="box">
+<h2>Account</h2>
+<div id="aOut"><input id="aMail" type="email" autocomplete="email" placeholder="E-Mail"><input id="aPw" type="password" autocomplete="current-password" placeholder="Passwort (min. 6 Zeichen)"><button id="aLogin" class="blue">Einloggen</button><button id="aReg">Registrieren</button></div>
+<div id="aIn" hidden><p id="aWho"></p><button id="aSave" class="blue">Jetzt speichern</button><button id="aLogout" class="red">Ausloggen</button></div>
+<p id="aMsg"></p><button id="aClose" class="red">Schließen</button>
+</div></div>
 <div id="adm" hidden><div class="box">
 <h2>Admin-Panel</h2>
 <div id="lock"><p id="pinInfo"></p><input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"><button id="pinGo">OK</button></div>
@@ -76,7 +91,10 @@ const ITEMS={
 };
 let SV={coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}};
 try{const o=JSON.parse(localStorage.getItem("blobbo-save"));if(o&&o.own&&o.eq)SV=o}catch(e){}
-function save(){try{localStorage.setItem("blobbo-save",JSON.stringify(SV))}catch(e){}}
+function save(){try{localStorage.setItem("blobbo-save",JSON.stringify(SV))}catch(e){}cloudSave()}
+function cloudSave(){const F=window.FB;if(F&&F.user)F.save({coins:SV.coins,own:SV.own,eq:SV.eq,best}).catch(()=>{})}
+const AB={x:120,y:562,w:160,h:44};
+function acctBtn(){btn(AB.x,AB.y,AB.w,AB.h,(window.FB&&window.FB.user)?"ACCOUNT":"LOG IN","#5bb8ff")}
 function colV(id){return ITEMS.col.find(i=>i.id===id).v}
 let ovr=null,tab="col",msg="",msgT=0,gain=0;
 const SB={x:120,y:505,w:160,h:48};
@@ -155,7 +173,7 @@ function burst(x,y,col,n=10,sp=4){
 function pop(x,y,txt,col="#fff"){pops.push({x,y,txt,col,l:1})}
 
 // ---------- Input ----------
-addEventListener("keydown",e=>{if(admOpen)return;seqBuf=(seqBuf+e.key).slice(-4);if(seqBuf==="2911"){seqBuf="";openAdmin();return}keys[e.key.toLowerCase()]=true;if(state==="shop"&&e.key==="Escape")closeShop();if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
+addEventListener("keydown",e=>{if(admOpen||authOpen)return;seqBuf=(seqBuf+e.key).slice(-4);if(seqBuf==="2911"){seqBuf="";openAdmin();return}keys[e.key.toLowerCase()]=true;if(state==="shop"&&e.key==="Escape")closeShop();if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
 addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 function gx(e){const r=c.getBoundingClientRect();return (e.clientX-r.left)/r.width*W}
 function gy(e){const r=c.getBoundingClientRect();return (e.clientY-r.top)/r.height*H}
@@ -163,6 +181,7 @@ c.addEventListener("pointerdown",e=>{
   const x=gx(e),y=gy(e);
   if(state==="shop"){shopClick(x,y);return}
   if((state==="menu"||state==="over")&&hit(x,y,SB)){state="shop";beep(500,.08,"triangle");return}
+  if((state==="menu"||state==="over")&&hit(x,y,AB)){openAuth();return}
   if(state==="menu"&&x<70&&y<70){const n=performance.now();tapN=(n-tapT<2000)?tapN+1:1;tapT=n;if(tapN>=5){tapN=0;openAdmin();return}}
   ptr=x;start();
 });
@@ -177,7 +196,8 @@ let overAt=0;
 function gameOver(){
   state="over";overAt=t;shake=14;beep(300,.5,"sawtooth",.08,-250);
   const total=Math.floor(score+bonus);
-  gain=coinsTotal+Math.floor(total/200);SV.coins+=gain;save();if(total>best){best=total;try{localStorage.setItem("blobbo-best",best)}catch(e){}}
+  gain=coinsTotal+Math.floor(total/200);SV.coins+=gain;if(total>best){best=total;try{localStorage.setItem("blobbo-best",best)}catch(e){}}
+  save();
   burst(P.x,H-30,"#ff6b8b",30,7);
 }
 
@@ -323,8 +343,8 @@ function draw(){
     text("Tippen oder Leertaste zum Start",W/2,430,22);
     text("Pfeiltasten / A D / Finger ziehen",W/2,462,18,"#ffe9a8");
     text("Münzen sammeln = Combo, rote Feder = Turbo",W/2,490,16,"#ffe9a8");
-    btn(SB.x,SB.y,SB.w,SB.h,"SHOP","#ff6b8b");
-    if(best)text("Rekord "+best,W/2,605,24,"#ffd23f");
+    btn(SB.x,SB.y,SB.w,SB.h,"SHOP","#ff6b8b");acctBtn();
+    if(best)text("Rekord "+best,W-16,34,22,"#ffd23f","right");
   }
   if(state==="over"){
     ctx.fillStyle="rgba(43,33,64,.55)";ctx.fillRect(0,0,W,H);
@@ -334,10 +354,42 @@ function draw(){
     text("Münzen: "+coinsTotal,W/2,312,26,"#ffd23f");
     text(total>=best&&total>0?"Neuer Rekord!":"Rekord "+best,W/2,356,26,"#ffd23f");
     text("+"+gain+" Münzen im Beutel ("+SV.coins+")",W/2,395,20,"#ffd23f");
-    btn(SB.x,SB.y,SB.w,SB.h,"SHOP","#ff6b8b");
+    btn(SB.x,SB.y,SB.w,SB.h,"SHOP","#ff6b8b");acctBtn();
     if(Math.floor(t/20)%2===0)text("Tippen für noch eine Runde",W/2,450,24);
   }
 }
+
+// ---------- Account (Firebase) ----------
+let authOpen=false;
+const $a=id=>document.getElementById(id);
+const DEF=()=>({coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}});
+function refreshAuth(){const u=window.FB&&window.FB.user;$a("aOut").hidden=!!u;$a("aIn").hidden=!u;if(u)$a("aWho").textContent="Eingeloggt als "+u.email}
+function openAuth(){authOpen=true;$a("auth").hidden=false;$a("aMsg").textContent=window.FB?"":"Online-Funktionen nicht verfügbar (Firebase nicht eingerichtet oder offline).";refreshAuth()}
+$a("aClose").onclick=()=>{authOpen=false;$a("auth").hidden=true};
+function fbErr(e){const m={"auth/invalid-email":"Ungültige E-Mail.","auth/invalid-credential":"E-Mail oder Passwort falsch.","auth/email-already-in-use":"E-Mail ist schon registriert.","auth/weak-password":"Passwort: mindestens 6 Zeichen.","auth/missing-password":"Bitte Passwort eingeben.","auth/network-request-failed":"Keine Verbindung."};return m[e.code]||"Fehler: "+(e.code||e.message)}
+async function doAuth(kind){
+  if(!window.FB){$a("aMsg").textContent="Firebase ist nicht eingerichtet.";return}
+  $a("aMsg").textContent="Einen Moment...";
+  try{await window.FB[kind]($a("aMail").value.trim(),$a("aPw").value);$a("aMsg").textContent=kind==="login"?"Willkommen zurück!":"Account erstellt!";$a("aPw").value=""}
+  catch(e){$a("aMsg").textContent=fbErr(e)}
+}
+$a("aLogin").onclick=()=>doAuth("login");$a("aReg").onclick=()=>doAuth("register");
+$a("aSave").onclick=()=>{save();$a("aMsg").textContent="Gespeichert!"};
+$a("aLogout").onclick=async()=>{
+  try{await window.FB.logout()}catch(e){}
+  SV=DEF();best=0;try{localStorage.removeItem("blobbo-best")}catch(e){}save();$a("aMsg").textContent="Ausgeloggt."
+};
+addEventListener("fb-user",async()=>{
+  const u=window.FB&&window.FB.user;
+  if(u){
+    try{
+      const d=await window.FB.load();
+      if(d){const df=DEF();SV={coins:d.coins||0,own:[...new Set([...df.own,...(d.own||[])])],eq:d.eq||df.eq};best=Math.max(best,d.best||0);try{localStorage.setItem("blobbo-best",best)}catch(e){}}
+      save();
+    }catch(e){}
+  }
+  refreshAuth();
+});
 
 // ---------- Admin-Panel (PIN-geschützt, nur lokal) ----------
 let admOpen=false,god=false,tapN=0,tapT=0,seqBuf="";
@@ -379,6 +431,35 @@ $("wipe").onclick=()=>{if(!$("wipe").dataset.s){$("wipe").dataset.s=1;$("wipe").
 reset();state="menu";
 (function loop(){update();draw();if(state==="shop")drawShop();requestAnimationFrame(loop)})();
 })();
+</script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// >>> HIER DEINE FIREBASE-DATEN EINTRAGEN (Schritt 2 der Anleitung) <<<
+const firebaseConfig={
+  apiKey:"AIzaSyCSgsgk8QDHION2oGghtl2YtkDHkqxatw8",
+  authDomain:"blobbo-hop.firebaseapp.com",
+  projectId:"blobbo-hop",
+  storageBucket:"blobbo-hop.firebasestorage.app",
+  messagingSenderId:"995499138182",
+  appId:"1:995499138182:web:df3d6ce0943edc02358507"
+};
+
+if(firebaseConfig.apiKey){
+  const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+  const ref=()=>doc(db,"players",auth.currentUser.uid);
+  window.FB={
+    user:null,
+    register:(e,p)=>createUserWithEmailAndPassword(auth,e,p),
+    login:(e,p)=>signInWithEmailAndPassword(auth,e,p),
+    logout:()=>signOut(auth),
+    load:async()=>{const s=await getDoc(ref());return s.exists()?s.data():null},
+    save:d=>setDoc(ref(),d)
+  };
+  onAuthStateChanged(auth,u=>{window.FB.user=u;window.dispatchEvent(new Event("fb-user"))});
+}
 </script>
 </body>
 </html>
