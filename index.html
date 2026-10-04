@@ -859,10 +859,11 @@ let friendOpen=false;
 const isOn=id=>!!(FR.pres[id]&&FR.pres[id].on);
 function ago(ms){
   const m=Math.floor((Date.now()-ms)/60000);
-  if(m<1)return "gerade eben";if(m<60)return "vor "+m+" Min.";
-  const h=Math.floor(m/60);if(h<24)return "vor "+h+" Std.";
-  const d=Math.floor(h/24);return "vor "+d+(d===1?" Tag":" Tagen");
+  if(m<1)return "gerade eben";if(m<60)return m+" Min.";
+  const h=Math.floor(m/60);if(h<24)return h+" Std.";
+  const d=Math.floor(h/24);return d+(d===1?" Tag":" Tage");
 }
+const fidFmt=f=>f?String(f).replace(/^(\d{3})(\d{3})(\d{4})$/,"$1 $2 $3"):"...";
 const friendList=()=>FR.ids.slice().sort((a,b)=>(isOn(b)-isOn(a))||String((FR.prof[a]||{}).name||"").localeCompare(String((FR.prof[b]||{}).name||"")));
 const reqList=()=>FR.reqs.slice().sort((a,b)=>(b.at||0)-(a.at||0));
 async function syncFriends(){
@@ -896,6 +897,7 @@ async function startSocial(){
 }
 setInterval(()=>{if(state==="friends")syncFriends()},60000);
 function openFriends(){state="friends";FR.scroll=0;FR.sel=null;FR.tab="fr";syncFriends();loadReqProfiles();beep(500,.08,"triangle")}
+const frTop=()=>FR.tab==="rq"?252:128;
 function drawFriends(){
   ctx.fillStyle="#bdeaff";ctx.fillRect(0,0,W,H);
   cloud((t*.2)%520-100,160,.9);cloud((t*.13+240)%520-100,380,1);
@@ -908,15 +910,19 @@ function drawFriends(){
     btn3d(tx,82,175,38,"",FR.tab===id?"#ff6b8b":"#c9b8ff",20);text(l,tx+88,107,20);
     if(id==="rq"&&rq.length){ctx.beginPath();ctx.arc(tx+158,92,11,0,7);outline("#ff4d6d");text(String(rq.length),tx+158,98,14)}
   });
-  shad(20,128,360,44,14);rr(20,128,360,44,14);outline("#fffdf2");
-  text("DEINE ID  (tippen = kopieren)",34,145,11,"#fff","left");
-  text(FR.myFid||"...",34,167,20,"#ffd23f","left");
-  btn3d(262,132,108,36,"+ ADDEN","#6bd96b",17);
-  const max=Math.max(0,list.length*72+8-390);FR.scroll=Math.max(0,Math.min(max,FR.scroll));
-  ctx.save();ctx.beginPath();ctx.rect(0,180,W,396);ctx.clip();ctx.translate(0,-FR.scroll);
+  const lt=frTop();
+  if(FR.tab==="rq"){
+    shad(20,128,360,112,18);rr(20,128,360,112,18);outline("#fff3b0");
+    ctx.setLineDash([7,5]);rr(27,135,346,98,13);ctx.lineWidth=2;ctx.strokeStyle=INK;ctx.stroke();ctx.setLineDash([]);
+    text("DEINE FREUNDE-ID  (tippen = kopieren)",W/2,153,12,"#fff");
+    text(fidFmt(FR.myFid),W/2,185,30,"#ffd23f");
+    btn3d(60,192,280,34,"+ FREUND ADDEN","#6bd96b",19);
+  }
+  const ah=576-lt,max=Math.max(0,list.length*72+12-ah);FR.scroll=Math.max(0,Math.min(max,FR.scroll));
+  ctx.save();ctx.beginPath();ctx.rect(0,lt,W,ah);ctx.clip();ctx.translate(0,-FR.scroll);
   list.forEach((e,i)=>{
-    const y=186+i*72;
-    if(y-FR.scroll>576||y+64-FR.scroll<180)return;
+    const y=lt+6+i*72;
+    if(y-FR.scroll>576||y+64-FR.scroll<lt)return;
     const isF=FR.tab==="fr",id=isF?e:e.from,p=(isF?FR.prof:FR.rprof)[id]||{},on=isF&&isOn(id),sel=isF&&FR.sel===id;
     shad(20,y,360,64,14);rr(20,y,360,64,14);outline(sel?"#ffe0e6":"#fffdf2");
     ctx.save();rr(20,y,360,64,14);ctx.clip();ctx.fillStyle=!isF?"#ffd23f":on?"#6bd96b":"#c9b8ff";ctx.fillRect(20,y,14,64);ctx.restore();
@@ -930,11 +936,12 @@ function drawFriends(){
     preview(112,y+27,skinCol(p.col),p.hat||"none",.62);
     ctx.restore();
     ctx.beginPath();ctx.arc(112,y+34,22,0,7);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
-    text((p.name||"...").slice(0,sel?9:14),146,y+30,19,"#fff","left");
+    if(isF){ctx.beginPath();ctx.arc(129,y+51,7,0,7);outline(on?"#6bd96b":"#c8c0d8")}
+    text((p.name||"...").slice(0,sel?9:14),146,y+29,19,"#fff","left");
     if(isF){
       if(sel){rr(270,y+14,102,36,12);outline("#ff6b8b");text("ENTFERNEN",321,y+37,14)}
-      else if(on)text("online",146,y+52,14,"#6bd96b","left");
-      else text("zuletzt online: "+(FR.pres[id]&&FR.pres[id].t?ago(FR.pres[id].t):"unbekannt"),146,y+52,12,"#fff","left");
+      else if(on){ctx.beginPath();ctx.arc(152,y+48,5,0,7);outline("#6bd96b");text("online",163,y+53,15,"#6bd96b","left")}
+      else text("zuletzt online: "+(FR.pres[id]&&FR.pres[id].t?ago(FR.pres[id].t):"unbekannt"),146,y+53,12,"#fff","left");
     }else{
       text("Freundschaftsanfrage",146,y+52,12,"#fff","left");
       rr(292,y+14,36,36,12);outline("#6bd96b");
@@ -944,8 +951,8 @@ function drawFriends(){
     }
   });
   ctx.restore();
-  if(!list.length)wrapText(FR.tab==="fr"?"Noch keine Freunde. Tippe auf + ADDEN und gib eine ID ein!":"Keine offenen Anfragen.",W/2,300,17,"#fff");
-  if(max>0){const th=50,ty=184+(FR.scroll/max)*(388-th);rr(391,ty,6,th,3);ctx.fillStyle="#a77bff";ctx.fill()}
+  if(!list.length)wrapText(FR.tab==="fr"?"Noch keine Freunde. Unter Anfragen kannst du Freunde per ID hinzufügen!":"Keine offenen Anfragen.",W/2,lt+110,17,"#fff");
+  if(max>0){const th=50,ty=lt+4+(FR.scroll/max)*(ah-8-th);rr(391,ty,6,th,3);ctx.fillStyle="#a77bff";ctx.fill()}
   if(MP.msgT>0){MP.msgT-=frameDt;rr(50,538,300,34,17);outline("#fffdf2");text(MP.msg,W/2,561,16,"#6bd96b")}
   else if(FR.err)wrapText(FR.err,W/2,548,13,"#ff6b8b");
 }
@@ -962,13 +969,16 @@ function friendsClick(x,y){
   const u=window.FB&&window.FB.user;if(!u)return;
   if(hit(x,y,{x:20,y:82,w:175,h:40})){FR.tab="fr";FR.scroll=0;FR.sel=null;beep(600,.05);return}
   if(hit(x,y,{x:205,y:82,w:175,h:40})){FR.tab="rq";FR.scroll=0;FR.sel=null;beep(600,.05);return}
-  if(hit(x,y,{x:262,y:132,w:108,h:36})){openFriendDlg();return}
-  if(hit(x,y,{x:20,y:128,w:230,h:44})){
-    if(FR.myFid){try{navigator.clipboard.writeText(FR.myFid).then(()=>toast("ID kopiert!"),()=>toast("Kopieren nicht möglich."))}catch(e){toast("Kopieren nicht möglich.")}}
-    return;
+  if(FR.tab==="rq"){
+    if(hit(x,y,{x:60,y:192,w:280,h:34})){openFriendDlg();return}
+    if(hit(x,y,{x:20,y:128,w:360,h:112})){
+      if(FR.myFid){try{navigator.clipboard.writeText(FR.myFid).then(()=>toast("ID kopiert!"),()=>toast("Kopieren nicht möglich."))}catch(e){toast("Kopieren nicht möglich.")}}
+      return;
+    }
   }
-  if(y<180||y>576)return;
-  const sy=y+FR.scroll,i=Math.floor((sy-186)/72),ry=186+i*72;
+  const lt=frTop();
+  if(y<lt||y>576)return;
+  const sy=y+FR.scroll,i=Math.floor((sy-(lt+6))/72),ry=lt+6+i*72;
   if(i<0||sy-ry>64)return;
   if(FR.tab==="fr"){
     const id=friendList()[i];if(!id)return;
