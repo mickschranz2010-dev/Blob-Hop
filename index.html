@@ -79,6 +79,22 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 #friendDlg button.blue{background:#5bb8ff}#friendDlg button.red{background:#ff6b8b}
 #friendDlg p{margin:4px 0;min-height:1.2em;color:#ff6b8b}
 #friendDlg input{letter-spacing:3px;text-align:center;font-size:26px}
+#invDlg{position:fixed;z-index:9;touch-action:auto;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,33,64,.6)}
+#invDlg[hidden]{display:none}
+#invDlg .dlg{background:var(--card);color:var(--txt);border:4px solid var(--ink);border-radius:20px;box-shadow:0 6px 0 var(--ink);padding:16px;width:min(80vw,280px)}
+#invDlg h3{margin:0 0 8px;font-size:26px;font-weight:400}
+#invDlg input,#invDlg button{font:inherit;font-size:18px;border:3px solid var(--ink);border-radius:12px;padding:6px 10px;margin:3px 3px 3px 0;background:#fff;color:#2b2140;width:100%;box-sizing:border-box}
+#invDlg button{width:auto;cursor:pointer;background:#ffd23f}
+#invDlg button.blue{background:#5bb8ff}#invDlg button.red{background:#ff6b8b}
+#invDlg p{margin:4px 0;min-height:1.2em;color:#ff6b8b}
+#invDlg input{letter-spacing:3px;text-align:center;font-size:26px}
+#invList{max-height:46vh;overflow:auto;margin:6px 0;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+#invDlg .irow{display:flex;align-items:center;gap:6px;border:3px solid var(--ink);border-radius:12px;padding:5px 8px;margin:5px 0;background:#fff;color:#2b2140}
+#invDlg .irow .in{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px}
+#invDlg .irow .is{font-size:12px;color:#8a7ba8}
+#invDlg .irow .is.on{color:#2e9e2e}
+#invDlg .irow button{font-size:15px;padding:3px 8px;margin:0}
+#invDlg .irow button:disabled{opacity:.5}
 </style>
 </head>
 <body>
@@ -110,6 +126,12 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 <button id="nameOk" class="blue">Speichern</button><button id="nameNo" class="red">Abbrechen</button>
 </div></div>
 </div>
+<div id="invDlg" hidden><div class="dlg">
+<h3>Freunde einladen</h3>
+<div id="invList"></div>
+<p id="invErr"></p>
+<button id="invClose" class="red">Schließen</button>
+</div></div>
 <div id="friendDlg" hidden><div class="dlg">
 <h3>Freund hinzufügen</h3>
 <input id="fdIn" inputmode="numeric" maxlength="10" placeholder="10-stellige ID" autocomplete="off">
@@ -464,14 +486,16 @@ function pop(x,y,txt,col="#fff"){pops.push({x,y,txt,col,l:1})}
 
 // ---------- Input ----------
 addEventListener("keydown",e=>{if(bindKey){if(e.key!=="Escape"){ST[bindKey]=e.key.toLowerCase();saveST();beep(760,.1,"triangle")}bindKey=null;e.preventDefault();return}if(state==="spectate"&&!admOpen&&!authOpen){if(e.key==="ArrowRight"||e.key==="ArrowLeft"||e.key===" "){specSwitch(e.key==="ArrowLeft"?-1:1);e.preventDefault()}if(e.key==="Escape")specLeave();return}
-  if(admOpen||authOpen||joinOpen||friendOpen)return;seqBuf=(seqBuf+e.key).slice(-4);if(seqBuf==="2911"){seqBuf="";openAdmin();return}keys[e.key.toLowerCase()]=true;if((state==="shop"||state==="settings"||state==="mp"||state==="board"||state==="friends")&&e.key==="Escape")closeShop();if(state==="lobby"&&e.key==="Escape")leaveRoom();if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
+  if(INV.list.length&&e.key.toLowerCase()==="g"&&!admOpen&&!authOpen&&!joinOpen&&!friendOpen&&!invOpen&&!(state==="play"&&(ST.kl==="g"||ST.kr==="g"))){acceptInvite();e.preventDefault();return}
+  if(admOpen||authOpen||joinOpen||friendOpen||invOpen)return;seqBuf=(seqBuf+e.key).slice(-4);if(seqBuf==="2911"){seqBuf="";openAdmin();return}keys[e.key.toLowerCase()]=true;if((state==="shop"||state==="settings"||state==="mp"||state==="board"||state==="friends")&&e.key==="Escape")closeShop();if(state==="lobby"&&e.key==="Escape")leaveRoom();if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
 addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 function gx(e){const r=c.getBoundingClientRect();return (e.clientX-r.left)/r.width*W}
 const dirOf=e=>{const r=c.getBoundingClientRect();return e.clientX<r.left+r.width/2?-1:1};
 function gy(e){const r=c.getBoundingClientRect();return (e.clientY-r.top)/r.height*H}
 addEventListener("pointerdown",e=>{
-  if(admOpen||authOpen||joinOpen||friendOpen||e.target.closest("#adm,#auth,#joinDlg,#friendDlg"))return;
+  if(admOpen||authOpen||joinOpen||friendOpen||invOpen||e.target.closest("#adm,#auth,#joinDlg,#friendDlg,#invDlg"))return;
   const x=gx(e),y=gy(e);
+  if(invClick(x,y))return;
   if(state==="shop"){sd={x,y,sc:shopScroll,m:false};return}
   if(state==="settings"){setClick(x,y);return}
   if(state==="mp"){mpMenuClick(x,y);return}
@@ -853,6 +877,95 @@ async function onUser(){
 addEventListener("fb-user",onUser);
 addEventListener("online",()=>{if(window.FB&&window.FB.user&&!cloudReady)onUser()});
 
+// ---------- Einladungen ----------
+const INV={list:[],unsub:null,msg:"",msgT:0};
+let invOpen=false;
+function invToast(m){INV.msg=m;INV.msgT=150}
+function cleanInvites(){
+  if(!window.MPB||!window.FB||!window.FB.user){MP.sent.clear();return}
+  MP.sent.forEach(to=>{window.MPB.remove("invites/"+to+"/"+window.FB.user.uid).catch(()=>{})});
+  MP.sent.clear();
+}
+async function onInvites(obj){
+  obj=obj||{};
+  INV.list=INV.list.filter(i=>obj[i.from]&&obj[i.from].code===i.code);
+  for(const from in obj){
+    const v=obj[from];
+    if(!v||!v.code||INV.list.some(i=>i.from===from&&i.code===v.code))continue;
+    try{
+      const r=await window.MPB.get("rooms/"+v.code);
+      const full=r&&r.players&&Object.keys(r.players).length>=4;
+      if(!r||r.state!=="lobby"||full||MP.code===v.code){window.MPB.remove("invites/"+window.FB.user.uid+"/"+from).catch(()=>{});continue}
+      if(INV.list.some(i=>i.from===from&&i.code===v.code))continue;
+      INV.list.push({from,name:String(v.name||"Spieler").slice(0,14),code:v.code,at0:t});
+      beep(880,.15,"triangle");
+    }catch(e){console.error(e)}
+  }
+}
+function startInvites(uid){stopInvites();if(window.MPB)INV.unsub=window.MPB.watch("invites/"+uid,onInvites)}
+function stopInvites(){if(INV.unsub){try{INV.unsub()}catch(e){}INV.unsub=null}INV.list=[]}
+function removeInvite(iv){try{window.MPB.remove("invites/"+window.FB.user.uid+"/"+iv.from).catch(()=>{})}catch(e){}}
+function declineInvite(){const iv=INV.list.shift();if(iv)removeInvite(iv)}
+async function acceptInvite(){
+  const iv=INV.list.shift();if(!iv)return;
+  removeInvite(iv);
+  if(!mpOK()){invToast("Bitte erst einloggen.");return}
+  if(MP.code===iv.code)return;
+  holdDir=0;ptr=null;
+  if(MP.code)await leaveRoom();
+  const e=await joinRoom(iv.code);
+  if(e)invToast(e);
+}
+function invClick(x,y){
+  if(!INV.list.length||!hit(x,y,{x:30,y:8,w:340,h:92}))return false;
+  if(hit(x,y,{x:44,y:62,w:150,h:30}))acceptInvite();
+  else if(hit(x,y,{x:206,y:62,w:150,h:30}))declineInvite();
+  return true;
+}
+function drawInvite(){
+  const iv=INV.list[0];
+  if(iv){
+    const a=Math.min(1,(t-iv.at0)/14),off=-100*Math.pow(1-a,3);
+    ctx.save();ctx.translate(0,off);
+    shad(30,8,340,92,16);rr(30,8,340,92,16);outline("#fffdf2");
+    text(iv.name+" hat dich eingeladen",W/2,34,17,"#fff");
+    text("Press G to accept"+(INV.list.length>1?"   (+"+(INV.list.length-1)+")":""),W/2,52,13,"#ffd23f");
+    btn3d(44,62,150,30,"Accept","#6bd96b",16);
+    btn3d(206,62,150,30,"Ablehnen","#ff6b8b",16);
+    ctx.restore();
+  }else if(INV.msgT>0){
+    INV.msgT-=frameDt;rr(50,10,300,34,17);outline("#fffdf2");text(INV.msg,W/2,33,16,"#ff6b8b");
+  }
+}
+// --- Freunde einladen (Raum-Ersteller) ---
+function openInvite(){
+  if(!MP.room||MP.room.state!=="lobby"){toast("Einladen geht nur in der Lobby.");return}
+  invOpen=true;$a("invDlg").hidden=false;$a("invErr").textContent="";
+  const box=$a("invList");box.innerHTML="";
+  const ids=friendList();
+  if(!ids.length){box.textContent="Du hast noch keine Freunde. Füge sie im Freunde-Menü hinzu.";return}
+  ids.forEach(id=>{
+    const p=FR.prof[id]||{},on=isOn(id),row=document.createElement("div");row.className="irow";
+    const nm=document.createElement("span");nm.className="in";nm.textContent=p.name||"...";
+    const st=document.createElement("span");st.className="is"+(on?" on":"");st.textContent=on?"online":"offline";
+    const b=document.createElement("button");
+    b.textContent=MP.sent.has(id)?"Gesendet ✓":"Einladen";b.disabled=!on||MP.sent.has(id);
+    b.onclick=()=>sendInvite(id,b);
+    row.appendChild(nm);row.appendChild(st);row.appendChild(b);box.appendChild(row);
+  });
+}
+function closeInvite(){invOpen=false;$a("invDlg").hidden=true}
+async function sendInvite(to,btn){
+  if(!MP.code||!MP.room||MP.room.state!=="lobby"){$a("invErr").textContent="Nur in der Lobby möglich.";return}
+  try{
+    const path="invites/"+to+"/"+uid();
+    await window.MPB.set(path,{name:String(SV.name||"Spieler").slice(0,14),code:MP.code,t:Date.now()});
+    try{window.MPB.dc(path)}catch(e){}
+    MP.sent.add(to);btn.textContent="Gesendet ✓";btn.disabled=true;beep(760,.1,"triangle");
+  }catch(e){console.error(e);$a("invErr").textContent="Fehler: "+(e.code||e.message)}
+}
+$a("invClose").onclick=closeInvite;
+
 // ---------- Freunde ----------
 const FR={ids:[],prof:{},pres:{},presU:{},reqs:[],rprof:{},unsubs:[],tab:"fr",sel:null,err:null,myFid:null,profKey:"",scroll:0};
 let friendOpen=false;
@@ -877,6 +990,7 @@ async function loadReqProfiles(){
   try{Object.assign(FR.rprof,await F.profiles(FR.reqs.map(r=>r.from)));FR.err=null}catch(e){console.error(e);FR.err="Fehler: "+(e.code||e.message)}
 }
 function stopSocial(){
+  stopInvites();
   FR.unsubs.forEach(f=>{try{f()}catch(e){}});FR.unsubs=[];
   Object.values(FR.presU).forEach(f=>{try{f()}catch(e){}});FR.presU={};
   FR.pres={};FR.ids=[];FR.reqs=[];FR.prof={};FR.rprof={};FR.myFid=null;FR.profKey="";FR.sel=null;
@@ -891,6 +1005,7 @@ async function startSocial(){
   if(!window.FB.user||window.FB.user.uid!==u.uid)return;
   const eb=e=>{console.error(e);FR.err="Fehler: "+(e.code||e.message)};
   if(window.PRES)try{FR.unsubs.push(window.PRES.start(u.uid))}catch(e){console.error(e)}
+  startInvites(u.uid);
   FR.unsubs.push(F.watchRequests(u.uid,l=>{FR.reqs=l;loadReqProfiles()},eb));
   FR.unsubs.push(F.watchFriends(u.uid,ids=>{FR.ids=ids;syncFriends()},eb));
   refreshAuth();
@@ -1094,7 +1209,7 @@ function drawBoard(){
 }
 
 // ---------- Multiplayer (Firebase Realtime Database) ----------
-const MP={code:null,room:null,unsub:null,active:false,round:null,joined:false,ghosts:{},msg:"",msgT:0,count:0,sendT:0};
+const MP={sent:new Set(),code:null,room:null,unsub:null,active:false,round:null,joined:false,ghosts:{},msg:"",msgT:0,count:0,sendT:0};
 let joinOpen=false;
 const toast=m=>{MP.msg=m;MP.msgT=160};
 const uid=()=>window.FB.user.uid;
@@ -1135,6 +1250,7 @@ function enterRoom(code){
   state="lobby";beep(700,.15,"triangle",.08,300);
 }
 function mpReset(msg){
+  cleanInvites();
   if(MP.unsub){try{MP.unsub()}catch(e){}}
   MP.unsub=null;MP.code=null;MP.room=null;MP.active=false;MP.round=null;MP.joined=false;MP.ghosts={};MP.spec=null;
   reset();state="mp";if(msg)toast(msg);
@@ -1170,7 +1286,7 @@ function onRoom(r){
   }
 }
 function startMP(r){
-  MP.round=r.round;MP.active=true;MP.ghosts={};MP.sendT=0;MP.spec=null;
+  cleanInvites();MP.round=r.round;MP.active=true;MP.ghosts={};MP.sendT=0;MP.spec=null;
   rnd=mulberry32(r.seed||1);
   reset();state="play";MP.count=150;
   beep(520,.15,"triangle",.08,300);
@@ -1254,7 +1370,8 @@ function drawLobby(){
       rr(20,y,360,84,16);ctx.fillStyle="#fffbe8";ctx.fill();ctx.setLineDash([9,7]);ctx.lineWidth=3;ctx.strokeStyle="#c9b8ff";ctx.stroke();ctx.setLineDash([]);
       ctx.beginPath();ctx.arc(58,y+42,14,0,7);outline(SC[i]);text(String(i+1),58,y+50,20);
       ctx.beginPath();ctx.arc(112,y+42,28,0,7);ctx.fillStyle="#efe6ff";ctx.fill();text("?",112,y+56,38);
-      text("Warte auf Spieler"+".".repeat(1+(t/20|0)%3),152,y+48,17,"#c9b8ff","left");
+      text("Warte auf Spieler"+".".repeat(1+(t/20|0)%3),148,y+46,13,"#c9b8ff","left");
+      btn3d(282,y+24,92,34,"Invite Friends","#ffa94d",12);
       continue;
     }
     rr(20,y,360,84,16);outline(id===me?"#d7ffd0":"#fffdf2");
@@ -1286,6 +1403,10 @@ function lobbyClick(x,y){
   if(hit(x,y,{x:60,y:58,w:280,h:76})){
     try{navigator.clipboard.writeText(MP.code).then(()=>toast("Code kopiert!"),()=>toast("Kopieren nicht möglich."))}catch(e){toast("Kopieren nicht möglich.")}
     return;
+  }
+  {
+    const ps0=(MP.room&&MP.room.players)||{},taken=Object.values(ps0).map(p=>p.slot);
+    for(let i=0;i<4;i++)if(!taken.includes(i)&&hit(x,y,{x:282,y:146+i*92+24,w:92,h:34})){openInvite();return}
   }
   if(hit(x,y,{x:210,y:522,w:170,h:50})){leaveRoom();return}
   if(hit(x,y,{x:20,y:522,w:170,h:50})){
@@ -1427,6 +1548,7 @@ function loop(now){
   if(n>=6)acc=0;
   draw();
   if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="friends")drawFriends();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();
+  drawInvite();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
