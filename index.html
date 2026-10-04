@@ -150,7 +150,7 @@ function beep(f,d=.12,type="square",v=.06,slide=0){
 let best=0;
 try{best=+localStorage.getItem("blobbo-best")||0}catch(e){}
 let state="menu",score=0,bonus=0,combo=0,comboT=0,shake=0,t=0,coinsTotal=0;
-let P,plats,coins,parts,pops,clouds,topY,maxH,genAlt=0,rnd=Math.random;
+let P,plats,coins,parts,pops,clouds,topY,maxH,genAlt=0,rnd=Math.random,frameDt=1;
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let z=Math.imul(a^a>>>15,1|a);z=z+Math.imul(z^z>>>7,61|z)^z;return((z^z>>>14)>>>0)/4294967296}}
 const keys={};let ptr=null,rel=null,holdDir=0;
 // ---------- Shop-Daten ----------
@@ -349,7 +349,7 @@ function drawSettings(){
     else{const on=k==="fs"?isFS():ST[k];rr(290,y+9,76,32,16);outline(on?"#6bd96b":"#c8c0d8");ctx.beginPath();ctx.arc(on?350:306,y+25,12,0,7);outline("#fff")}
   });
   if(bindKey)text("Drück jetzt eine Taste (Esc = Abbrechen)",W/2,524,17,"#ff6b8b");
-  else if(msgT>0){msgT--;text(msg,W/2,524,18,"#ff6b8b")}
+  else if(msgT>0){msgT-=frameDt;text(msg,W/2,524,18,"#ff6b8b")}
   text("Mehr Optionen bald!",W/2,560,20,"#ffd23f");
   btn(120,584,160,40,"Zurück","#5bb8ff");
 }
@@ -388,7 +388,7 @@ function drawShop(){
   ctx.beginPath();ctx.ellipse(W-90,36,11,11,0,0,7);outline("#ffd23f");text(SV.coins,W-72,46,28,"#fff","left");
   [["col","Farben"],["hat","Hüte"],["trail","Spuren"],["pad","Pads"]].forEach(([id,l],i)=>{rr(20+i*92,76,86,38,12);outline(tab===id?"#ff6b8b":"#c9b8ff");text(l,63+i*92,103,19)});
   if(shopMax()>0){const th=60,ty=126+(shopScroll/shopMax())*(448-th);rr(391,ty,6,th,3);ctx.fillStyle="#a77bff";ctx.fill()}
-  if(msgT>0){msgT--;rr(60,536,280,34,17);outline("#fffdf2");text(msg,W/2,560,18,"#ff6b8b")}
+  if(msgT>0){msgT-=frameDt;rr(60,536,280,34,17);outline("#fffdf2");text(msg,W/2,560,18,"#ff6b8b")}
   btn(120,584,160,40,"Zurück","#5bb8ff");
 }
 
@@ -1008,7 +1008,7 @@ function drawGhosts(cam=maxH,focus=null){
     const pl=r.players[id];if(id===me||!pl)continue;
     const q=r.pos[id];let g=MP.ghosts[id];
     if(!g)g=MP.ghosts[id]={x:q.x,a:q.a};
-    g.x+=(q.x-g.x)*.3;g.a+=(q.a-g.a)*.3;
+    const gk=1-Math.pow(.7,frameDt);g.x+=(q.x-g.x)*gk;g.a+=(q.a-g.a)*gk;
     const ys=H-(g.a-cam);
     if(ys<-70||ys>H+70)continue;
     ctx.globalAlpha=id===focus?1:.8;preview(g.x,ys,colV(pl.col||"orange"),pl.hat||"none",1);ctx.globalAlpha=1;
@@ -1044,7 +1044,7 @@ function drawMP(){
   shad(40,372,320,92,20);rr(40,372,320,92,20);outline("#fffdf2");
   text("Bis zu 4 Spieler",W/2,404,19);text("Alle spielen dieselbe Welt",W/2,430,17,"#ffd23f");text("Namen schweben über jedem Kopf",W/2,454,15);
   if(!ok)wrapText(mpWhy(),W/2,496,16,"#ff6b8b");
-  if(MP.msgT>0){MP.msgT--;wrapText(MP.msg,W/2,ok?500:536,17,"#ff6b8b")}
+  if(MP.msgT>0){MP.msgT-=frameDt;wrapText(MP.msg,W/2,ok?500:536,17,"#ff6b8b")}
   btn3d(120,584,160,40,"Zurück","#a77bff",22);
 }
 function mpMenuClick(x,y){
@@ -1096,7 +1096,7 @@ function drawLobby(){
   const m=ps[me];
   btn3d(20,522,170,50,m&&m.ready?"NICHT BEREIT":"BEREIT!",m&&m.ready?"#ffd23f":"#6bd96b",24);
   btn3d(210,522,170,50,"VERLASSEN","#ff6b8b",24);
-  if(MP.msgT>0){MP.msgT--;wrapText(MP.msg,W/2,603,16,"#ff6b8b")}
+  if(MP.msgT>0){MP.msgT-=frameDt;wrapText(MP.msg,W/2,603,16,"#ff6b8b")}
   else text(ids.length<2?"Warte auf mindestens einen Mitspieler":"Los geht es, sobald alle bereit sind",W/2,606,16,"#fff");
 }
 function lobbyClick(x,y){
@@ -1154,7 +1154,7 @@ function drawSpectate(){
   if(!r||!sp||!ids.length){specLeave();return}
   if(!ids.includes(sp.id))sp.id=ids[0];
   const q=r.pos[sp.id],pl=r.players[sp.id];
-  sp.cam+=(q.a-H*.45-sp.cam)*.12;const cam=sp.cam;
+  sp.cam+=(q.a-H*.45-sp.cam)*(1-Math.pow(.88,frameDt));const cam=sp.cam;
   ctx.fillStyle=skyColor(cam);ctx.fillRect(0,0,W,H);
   clouds.forEach(cl=>cloud(cl.x,cl.y,cl.s));
   sp.world.gen(cam+H+120);
@@ -1231,7 +1231,22 @@ $("restore").onclick=async()=>{
 };
 
 reset();state="menu";
-(function loop(){update();draw();if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();requestAnimationFrame(loop)})();
+const STEP=1000/60;
+let lastT=performance.now(),acc=0;
+function loop(now){
+  now=now||performance.now();
+  let dt=now-lastT;lastT=now;
+  if(dt>250||dt<0)dt=STEP;
+  frameDt=Math.min(4,dt/STEP);
+  acc+=dt;
+  let n=0;
+  while(acc>=STEP-2&&n<6){update();acc-=STEP;n++}
+  if(n>=6)acc=0;
+  draw();
+  if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
 })();
 </script>
 <script type="module">
