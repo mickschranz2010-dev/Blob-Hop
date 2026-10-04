@@ -70,6 +70,15 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 #joinDlg button.blue{background:#5bb8ff}#joinDlg button.red{background:#ff6b8b}
 #joinDlg p{margin:4px 0;min-height:1.2em;color:#ff6b8b}
 #joinDlg input{text-transform:uppercase;letter-spacing:6px;text-align:center;font-size:26px}
+#friendDlg{position:fixed;z-index:9;touch-action:auto;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,33,64,.6)}
+#friendDlg[hidden]{display:none}
+#friendDlg .dlg{background:var(--card);color:var(--txt);border:4px solid var(--ink);border-radius:20px;box-shadow:0 6px 0 var(--ink);padding:16px;width:min(80vw,280px)}
+#friendDlg h3{margin:0 0 8px;font-size:26px;font-weight:400}
+#friendDlg input,#friendDlg button{font:inherit;font-size:18px;border:3px solid var(--ink);border-radius:12px;padding:6px 10px;margin:3px 3px 3px 0;background:#fff;color:#2b2140;width:100%;box-sizing:border-box}
+#friendDlg button{width:auto;cursor:pointer;background:#ffd23f}
+#friendDlg button.blue{background:#5bb8ff}#friendDlg button.red{background:#ff6b8b}
+#friendDlg p{margin:4px 0;min-height:1.2em;color:#ff6b8b}
+#friendDlg input{letter-spacing:3px;text-align:center;font-size:26px}
 </style>
 </head>
 <body>
@@ -89,7 +98,7 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
   </div>
  </div>
  <div class="stats"><div><b id="stCoins">0</b><span>Münzen</span></div><div><b id="stTotal">0</b><span>Gesamt</span></div><div><b id="stBest">0</b><span>Highscore</span></div></div>
- <div class="idf"><span>ID <span id="idNo"></span></span><div class="bar"></div></div>
+ <div class="idf"><span>FREUNDE-ID <span id="idNo"></span></span><div class="bar"></div></div>
 </div>
 <button id="aSave" class="blue">Jetzt speichern</button><button id="aLogout" class="red">Ausloggen</button><p id="cloudSt" style="font-size:14px"></p></div>
 <p id="aMsg"></p><button id="aClose" class="red">Schließen</button>
@@ -101,6 +110,12 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 <button id="nameOk" class="blue">Speichern</button><button id="nameNo" class="red">Abbrechen</button>
 </div></div>
 </div>
+<div id="friendDlg" hidden><div class="dlg">
+<h3>Freund hinzufügen</h3>
+<input id="fdIn" inputmode="numeric" maxlength="10" placeholder="10-stellige ID" autocomplete="off">
+<p id="fdErr"></p>
+<button id="fdOk" class="blue">Anfrage senden</button><button id="fdNo" class="red">Abbrechen</button>
+</div></div>
 <div id="joinDlg" hidden><div class="dlg">
 <h3>Raum beitreten</h3>
 <input id="joinIn" maxlength="5" placeholder="CODE" autocapitalize="characters" autocomplete="off">
@@ -179,7 +194,8 @@ async function cloudFlush(){
   const lb={name:nm,bestH:data.bestH,best:data.best,total:data.total,col:SV.eq.col,hat:SV.eq.hat};
   let ok=false;
   try{
-    await Promise.race([Promise.all([F.save(data),F.pushBoard?F.pushBoard(lb):0]),new Promise((_,rej)=>setTimeout(()=>rej({code:"timeout"}),8000))]);
+    const pk=nm+"|"+SV.eq.col+"|"+SV.eq.hat;
+    await Promise.race([Promise.all([F.save(data),F.pushBoard?F.pushBoard(lb):0,(FR.myFid&&pk!==FR.profKey&&F.updateProfile)?F.updateProfile(FR.myFid,nm,SV.eq.col,SV.eq.hat).then(()=>{FR.profKey=pk}).catch(e=>console.error("Profil:",e)):0]),new Promise((_,rej)=>setTimeout(()=>rej({code:"timeout"}),8000))]);
     cloudFail=0;ok=true;cloudSt="ok:"+new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
   }catch(e){
     console.error(e);
@@ -191,8 +207,8 @@ async function cloudFlush(){
 addEventListener("online",()=>cloudFlush());
 addEventListener("pagehide",()=>cloudFlush());
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")cloudFlush()});
-const MB={x:120,y:432,w:160,h:44},AB={x:120,y:484,w:160,h:44},GB={x:120,y:536,w:160,h:44};
-function acctBtn(){btn(AB.x,AB.y,AB.w,AB.h,(window.FB&&window.FB.user)?"ACCOUNT":"LOG IN","#5bb8ff");btn(GB.x,GB.y,GB.w,GB.h,"SETTINGS","#a77bff");btn(MB.x,MB.y,MB.w,MB.h,"MULTIPLAYER","#6bd96b")}
+const FRB={x:120,y:408,w:160,h:44},MB={x:120,y:460,w:160,h:44},AB={x:120,y:512,w:160,h:44},GB={x:120,y:564,w:160,h:44};
+function acctBtn(){btn(AB.x,AB.y,AB.w,AB.h,(window.FB&&window.FB.user)?"ACCOUNT":"LOG IN","#5bb8ff");btn(GB.x,GB.y,GB.w,GB.h,"SETTINGS","#a77bff");btn(MB.x,MB.y,MB.w,MB.h,"MULTIPLAYER","#6bd96b");btn(FRB.x,FRB.y,FRB.w,FRB.h,"FREUNDE","#ffa94d");if(FR.reqs.length){ctx.beginPath();ctx.arc(FRB.x+FRB.w-4,FRB.y+4,11,0,7);outline("#ff4d6d");text(String(FR.reqs.length),FRB.x+FRB.w-4,FRB.y+10,15)}}
 const CH={x:10,y:10,w:158,h:48};
 function pencil(x,y){ctx.save();ctx.translate(x,y);ctx.rotate(.8);rr(-3,-10,6,15,1);outline("#ffd23f");ctx.beginPath();ctx.moveTo(-3,5);ctx.lineTo(3,5);ctx.lineTo(0,11);ctx.closePath();outline("#ffe9a8");ctx.restore()}
 function chip(){
@@ -209,7 +225,7 @@ function chip(){
 }
 function colV(id){return ITEMS.col.find(i=>i.id===id).v}
 let ovr=null,tab="col",msg="",msgT=0,gain=0,shopScroll=0,sd=null;
-const SB={x:120,y:380,w:160,h:44};
+const SB={x:120,y:356,w:160,h:44};
 function hit(x,y,r){return x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h}
 function starPath(x,y,r){ctx.moveTo(x,y-r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.quadraticCurveTo(x,y,x,y+r);ctx.quadraticCurveTo(x,y,x-r,y);ctx.quadraticCurveTo(x,y,x,y-r)}
 function heartPath(x,y,r){ctx.moveTo(x,y+r*.9);ctx.bezierCurveTo(x-r*1.6,y-r*.2,x-r*.7,y-r*1.4,x,y-r*.5);ctx.bezierCurveTo(x+r*.7,y-r*1.4,x+r*1.6,y-r*.2,x,y+r*.9)}
@@ -448,18 +464,19 @@ function pop(x,y,txt,col="#fff"){pops.push({x,y,txt,col,l:1})}
 
 // ---------- Input ----------
 addEventListener("keydown",e=>{if(bindKey){if(e.key!=="Escape"){ST[bindKey]=e.key.toLowerCase();saveST();beep(760,.1,"triangle")}bindKey=null;e.preventDefault();return}if(state==="spectate"&&!admOpen&&!authOpen){if(e.key==="ArrowRight"||e.key==="ArrowLeft"||e.key===" "){specSwitch(e.key==="ArrowLeft"?-1:1);e.preventDefault()}if(e.key==="Escape")specLeave();return}
-  if(admOpen||authOpen||joinOpen)return;seqBuf=(seqBuf+e.key).slice(-4);if(seqBuf==="2911"){seqBuf="";openAdmin();return}keys[e.key.toLowerCase()]=true;if((state==="shop"||state==="settings"||state==="mp"||state==="board")&&e.key==="Escape")closeShop();if(state==="lobby"&&e.key==="Escape")leaveRoom();if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
+  if(admOpen||authOpen||joinOpen||friendOpen)return;seqBuf=(seqBuf+e.key).slice(-4);if(seqBuf==="2911"){seqBuf="";openAdmin();return}keys[e.key.toLowerCase()]=true;if((state==="shop"||state==="settings"||state==="mp"||state==="board"||state==="friends")&&e.key==="Escape")closeShop();if(state==="lobby"&&e.key==="Escape")leaveRoom();if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
 addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 function gx(e){const r=c.getBoundingClientRect();return (e.clientX-r.left)/r.width*W}
 const dirOf=e=>{const r=c.getBoundingClientRect();return e.clientX<r.left+r.width/2?-1:1};
 function gy(e){const r=c.getBoundingClientRect();return (e.clientY-r.top)/r.height*H}
 addEventListener("pointerdown",e=>{
-  if(admOpen||authOpen||joinOpen||e.target.closest("#adm,#auth,#joinDlg"))return;
+  if(admOpen||authOpen||joinOpen||friendOpen||e.target.closest("#adm,#auth,#joinDlg,#friendDlg"))return;
   const x=gx(e),y=gy(e);
   if(state==="shop"){sd={x,y,sc:shopScroll,m:false};return}
   if(state==="settings"){setClick(x,y);return}
   if(state==="mp"){mpMenuClick(x,y);return}
   if(state==="board"){sd={x,y,sc:boardScroll,m:false,b:true};return}
+  if(state==="friends"){sd={x,y,sc:FR.scroll,m:false,f:true};return}
   if(state==="lobby"){lobbyClick(x,y);return}
   if(state==="spectate"){specClick(x,y);return}
   if((state==="menu"||state==="over")&&hit(x,y,SB)){state="shop";beep(500,.08,"triangle");return}
@@ -468,6 +485,7 @@ addEventListener("pointerdown",e=>{
   if((state==="menu"||state==="over")&&hit(x,y,AB)){openAuth();return}
   if((state==="menu"||state==="over")&&hit(x,y,GB)){state="settings";beep(500,.08,"triangle");return}
   if((state==="menu"||state==="over")&&hit(x,y,MB)){state="mp";beep(500,.08,"triangle");return}
+  if((state==="menu"||state==="over")&&hit(x,y,FRB)){openFriends();return}
   if(state==="menu"&&x<60&&y>H-60){const n=performance.now();tapN=(n-tapT<2000)?tapN+1:1;tapT=n;if(tapN>=5){tapN=0;openAdmin();return}}
   if(e.pointerType!=="mouse"){holdDir=dirOf(e);ptr=null}else ptr=Math.max(0,Math.min(W,x));
   start();
@@ -476,14 +494,14 @@ addEventListener("pointermove",e=>{
   if(e.pointerType==="mouse")ptr=(e.buttons&1)?Math.max(0,Math.min(W,gx(e))):null;
   else if(ptr!==null)ptr=Math.max(0,Math.min(W,gx(e)));
   if(holdDir&&e.pointerType!=="mouse")holdDir=dirOf(e);
-  if(sd){const dy=gy(e)-sd.y;if(Math.abs(dy)>8)sd.m=true;if(sd.m){if(sd.b)boardScroll=sd.sc-dy;else shopScroll=sd.sc-dy}}
+  if(sd){const dy=gy(e)-sd.y;if(Math.abs(dy)>8)sd.m=true;if(sd.m){if(sd.b)boardScroll=sd.sc-dy;else if(sd.f)FR.scroll=sd.sc-dy;else shopScroll=sd.sc-dy}}
 });
-const upF=e=>{if(sd){if(!sd.m&&e.type==="pointerup"){if(sd.b)boardClick(sd.x,sd.y);else shopClick(sd.x,sd.y)}sd=null}ptr=null;holdDir=0};
-addEventListener("wheel",e=>{if(state==="shop")shopScroll+=e.deltaY;if(state==="board")boardScroll+=e.deltaY},{passive:true});
+const upF=e=>{if(sd){if(!sd.m&&e.type==="pointerup"){if(sd.b)boardClick(sd.x,sd.y);else if(sd.f)friendsClick(sd.x,sd.y);else shopClick(sd.x,sd.y)}sd=null}ptr=null;holdDir=0};
+addEventListener("wheel",e=>{if(state==="shop")shopScroll+=e.deltaY;if(state==="board")boardScroll+=e.deltaY;if(state==="friends")FR.scroll+=e.deltaY},{passive:true});
 addEventListener("blur",()=>{ptr=null;holdDir=0});
 addEventListener("pointerup",upF);addEventListener("pointercancel",upF);
 function start(){
-  if(state==="play"||state==="shop"||state==="settings"||state==="mp"||state==="lobby"||state==="board"||state==="spectate")return;
+  if(state==="play"||state==="shop"||state==="settings"||state==="mp"||state==="lobby"||state==="board"||state==="spectate"||state==="friends")return;
   if(state==="over"&&t-overAt<40)return;
   reset();state="play";beep(520,.15,"triangle",.08,300);
 }
@@ -732,15 +750,15 @@ function draw(){
   }
   if(state==="over"){
     ctx.fillStyle="rgba(43,33,64,.55)";ctx.fillRect(0,0,W,H);
-    text("OOPS!",W/2,130,80,"#ff6b8b");
+    text("OOPS!",W/2,100,80,"#ff6b8b");
     const total=Math.floor(score+bonus);
-    text("Punkte: "+total,W/2,205,38);
-    text("Höhe: "+Math.floor(maxH/10)+" m",W/2,236,22,"#bdeaff");
-    text("Münzen: "+coinsTotal,W/2,270,26,"#ffd23f");
-    text(total>=best&&total>0?"Neuer Rekord!":"Rekord "+best,W/2,302,26,"#ffd23f");
-    text("+"+gain+" Münzen im Beutel ("+SV.coins+")",W/2,332,20,"#ffd23f");
+    text("Punkte: "+total,W/2,170,38);
+    text("Höhe: "+Math.floor(maxH/10)+" m",W/2,200,22,"#bdeaff");
+    text("Münzen: "+coinsTotal,W/2,232,26,"#ffd23f");
+    text(total>=best&&total>0?"Neuer Rekord!":"Rekord "+best,W/2,262,26,"#ffd23f");
+    text("+"+gain+" Münzen im Beutel ("+SV.coins+")",W/2,292,20,"#ffd23f");
     btn(SB.x,SB.y,SB.w,SB.h,"SHOP","#ff6b8b");acctBtn();
-    if(Math.floor(t/20)%2===0)text("Tippen für noch eine Runde",W/2,368,24);
+    if(Math.floor(t/20)%2===0)text("Tippen für noch eine Runde",W/2,330,24);
   }
 }
 
@@ -760,7 +778,7 @@ function refreshAuth(){
   if(!u)return;
   $a("nameTxt").textContent=SV.name||"Spieler";$a("aMail2").textContent=u.email;
   $a("stCoins").textContent=SV.coins;$a("stTotal").textContent=Math.max(SV.total||0,SV.coins);$a("stBest").textContent=best;
-  $a("idNo").textContent=u.uid.slice(0,8).toUpperCase();drawAvatar();
+  $a("idNo").textContent=FR.myFid||"...";drawAvatar();
 }
 function startEdit(){$a("nameErr").textContent="";$a("nameDlg").hidden=false;$a("nameIn").value=SV.name||"";setTimeout(()=>{$a("nameIn").focus();$a("nameIn").select()},50)}
 function refreshStatus(){const el=document.getElementById("cloudSt");if(!el)return;const c=cloudSt||"";el.textContent=c.startsWith("ok:")?"Cloud: gespeichert ("+c.slice(3)+")":c==="wait"?"Cloud: wartet auf Verbindung (lokal gesichert)":c.startsWith("err:")?"Cloud-Fehler: "+c.slice(4):""}
@@ -792,6 +810,8 @@ $a("aLogout").onclick=async()=>{
   const ok=await cloudFlush();
   if(!ok){$a("aMsg").textContent="Cloud-Speichern fehlgeschlagen. Bitte online gehen und erneut versuchen - deine Daten bleiben sonst nicht erhalten.";return}
   cloudReady=false;clearTimeout(cloudT);
+  try{if(window.PRES&&window.FB.user)await window.PRES.stop(window.FB.user.uid)}catch(e){}
+  stopSocial();
   try{await window.FB.logout()}catch(e){}
   SV=DEF();best=0;try{localStorage.removeItem("blobbo-best")}catch(e){}saveLocal();cloudSt="";refreshStatus();$a("aMsg").textContent="Ausgeloggt."
 };
@@ -805,7 +825,7 @@ let loadTry=0;
 async function onUser(){
   const u=window.FB&&window.FB.user;
   cloudReady=false;clearTimeout(cloudT);
-  if(!u){refreshAuth();return}
+  if(!u){stopSocial();refreshAuth();return}
   try{
     const d=await window.FB.load();
     if(!window.FB.user||window.FB.user.uid!==u.uid)return;
@@ -823,7 +843,7 @@ async function onUser(){
     }else{
       SV.uid=u.uid;if(pendingName)SV.name=pendingName;
     }
-    pendingName=null;loadTry=0;cloudReady=true;save();
+    pendingName=null;loadTry=0;cloudReady=true;save();startSocial();
   }catch(e){
     console.error(e);cloudSt="wait";refreshStatus();
     if(window.FB&&window.FB.user)setTimeout(onUser,Math.min(30000,3000*(++loadTry)));
@@ -832,6 +852,156 @@ async function onUser(){
 }
 addEventListener("fb-user",onUser);
 addEventListener("online",()=>{if(window.FB&&window.FB.user&&!cloudReady)onUser()});
+
+// ---------- Freunde ----------
+const FR={ids:[],prof:{},pres:{},presU:{},reqs:[],rprof:{},unsubs:[],tab:"fr",sel:null,err:null,myFid:null,profKey:"",scroll:0};
+let friendOpen=false;
+const isOn=id=>!!(FR.pres[id]&&FR.pres[id].on);
+function ago(ms){
+  const m=Math.floor((Date.now()-ms)/60000);
+  if(m<1)return "gerade eben";if(m<60)return "vor "+m+" Min.";
+  const h=Math.floor(m/60);if(h<24)return "vor "+h+" Std.";
+  const d=Math.floor(h/24);return "vor "+d+(d===1?" Tag":" Tagen");
+}
+const friendList=()=>FR.ids.slice().sort((a,b)=>(isOn(b)-isOn(a))||String((FR.prof[a]||{}).name||"").localeCompare(String((FR.prof[b]||{}).name||"")));
+const reqList=()=>FR.reqs.slice().sort((a,b)=>(b.at||0)-(a.at||0));
+async function syncFriends(){
+  const F=window.FB;if(!F||!F.user)return;
+  FR.ids.forEach(id=>{if(!FR.presU[id]&&window.PRES)FR.presU[id]=window.PRES.watch(id,v=>{FR.pres[id]=v||null})});
+  Object.keys(FR.presU).forEach(id=>{if(!FR.ids.includes(id)){try{FR.presU[id]()}catch(e){}delete FR.presU[id];delete FR.pres[id]}});
+  try{Object.assign(FR.prof,await F.profiles(FR.ids));FR.err=null}catch(e){console.error(e);FR.err="Fehler: "+(e.code||e.message)}
+}
+async function loadReqProfiles(){
+  const F=window.FB;if(!F||!F.user)return;
+  try{Object.assign(FR.rprof,await F.profiles(FR.reqs.map(r=>r.from)));FR.err=null}catch(e){console.error(e);FR.err="Fehler: "+(e.code||e.message)}
+}
+function stopSocial(){
+  FR.unsubs.forEach(f=>{try{f()}catch(e){}});FR.unsubs=[];
+  Object.values(FR.presU).forEach(f=>{try{f()}catch(e){}});FR.presU={};
+  FR.pres={};FR.ids=[];FR.reqs=[];FR.prof={};FR.rprof={};FR.myFid=null;FR.profKey="";FR.sel=null;
+}
+async function startSocial(){
+  const F=window.FB,u=F&&F.user;
+  stopSocial();
+  if(!u||!F.ensureProfile)return;
+  const nm=String(SV.name||"Spieler").slice(0,14)||"Spieler";
+  try{FR.myFid=await F.ensureProfile(nm,SV.eq.col,SV.eq.hat);FR.profKey=nm+"|"+SV.eq.col+"|"+SV.eq.hat;FR.err=null}
+  catch(e){console.error(e);FR.err="Profil: "+(e.code||e.message)}
+  if(!window.FB.user||window.FB.user.uid!==u.uid)return;
+  const eb=e=>{console.error(e);FR.err="Fehler: "+(e.code||e.message)};
+  if(window.PRES)try{FR.unsubs.push(window.PRES.start(u.uid))}catch(e){console.error(e)}
+  FR.unsubs.push(F.watchRequests(u.uid,l=>{FR.reqs=l;loadReqProfiles()},eb));
+  FR.unsubs.push(F.watchFriends(u.uid,ids=>{FR.ids=ids;syncFriends()},eb));
+  refreshAuth();
+}
+setInterval(()=>{if(state==="friends")syncFriends()},60000);
+function openFriends(){state="friends";FR.scroll=0;FR.sel=null;FR.tab="fr";syncFriends();loadReqProfiles();beep(500,.08,"triangle")}
+function drawFriends(){
+  ctx.fillStyle="#bdeaff";ctx.fillRect(0,0,W,H);
+  cloud((t*.2)%520-100,160,.9);cloud((t*.13+240)%520-100,380,1);
+  shad(60,10,280,56,18);rr(60,10,280,56,18);outline("#ffa94d");text("FREUNDE",W/2,50,34);
+  btn3d(120,584,160,40,"Zurück","#a77bff",22);
+  const u=window.FB&&window.FB.user;
+  if(!u){wrapText("Melde dich an (LOG IN), um Freunde hinzuzufügen.",W/2,260,18,"#fff");return}
+  const rq=reqList(),list=FR.tab==="fr"?friendList():rq;
+  [["fr","Freunde",20],["rq","Anfragen",205]].forEach(([id,l,tx])=>{
+    btn3d(tx,82,175,38,"",FR.tab===id?"#ff6b8b":"#c9b8ff",20);text(l,tx+88,107,20);
+    if(id==="rq"&&rq.length){ctx.beginPath();ctx.arc(tx+158,92,11,0,7);outline("#ff4d6d");text(String(rq.length),tx+158,98,14)}
+  });
+  shad(20,128,360,44,14);rr(20,128,360,44,14);outline("#fffdf2");
+  text("DEINE ID  (tippen = kopieren)",34,145,11,"#fff","left");
+  text(FR.myFid||"...",34,167,20,"#ffd23f","left");
+  btn3d(262,132,108,36,"+ ADDEN","#6bd96b",17);
+  const max=Math.max(0,list.length*72+8-390);FR.scroll=Math.max(0,Math.min(max,FR.scroll));
+  ctx.save();ctx.beginPath();ctx.rect(0,180,W,396);ctx.clip();ctx.translate(0,-FR.scroll);
+  list.forEach((e,i)=>{
+    const y=186+i*72;
+    if(y-FR.scroll>576||y+64-FR.scroll<180)return;
+    const isF=FR.tab==="fr",id=isF?e:e.from,p=(isF?FR.prof:FR.rprof)[id]||{},on=isF&&isOn(id),sel=isF&&FR.sel===id;
+    shad(20,y,360,64,14);rr(20,y,360,64,14);outline(sel?"#ffe0e6":"#fffdf2");
+    ctx.save();rr(20,y,360,64,14);ctx.clip();ctx.fillStyle=!isF?"#ffd23f":on?"#6bd96b":"#c9b8ff";ctx.fillRect(20,y,14,64);ctx.restore();
+    rr(20,y,360,64,14);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
+    if(isF){
+      if(on){ctx.beginPath();ctx.arc(58,y+32,15+Math.sin(t*.1)*2,0,7);ctx.lineWidth=2;ctx.strokeStyle="rgba(107,217,107,.6)";ctx.stroke()}
+      ctx.beginPath();ctx.arc(58,y+32,11,0,7);outline(on?"#6bd96b":"#c8c0d8");
+    }else{ctx.beginPath();ctx.arc(58,y+32,13,0,7);outline("#ffd23f");text("!",58,y+40,22)}
+    ctx.save();ctx.beginPath();ctx.arc(112,y+34,22,0,7);ctx.clip();
+    ctx.fillStyle="#8fe3ff";ctx.fillRect(88,y+10,48,48);
+    preview(112,y+27,skinCol(p.col),p.hat||"none",.62);
+    ctx.restore();
+    ctx.beginPath();ctx.arc(112,y+34,22,0,7);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
+    text((p.name||"...").slice(0,sel?9:14),146,y+30,19,"#fff","left");
+    if(isF){
+      if(sel){rr(270,y+14,102,36,12);outline("#ff6b8b");text("ENTFERNEN",321,y+37,14)}
+      else if(on)text("online",146,y+52,14,"#6bd96b","left");
+      else text("zuletzt online: "+(FR.pres[id]&&FR.pres[id].t?ago(FR.pres[id].t):"unbekannt"),146,y+52,12,"#fff","left");
+    }else{
+      text("Freundschaftsanfrage",146,y+52,12,"#fff","left");
+      rr(292,y+14,36,36,12);outline("#6bd96b");
+      ctx.beginPath();ctx.moveTo(300,y+33);ctx.lineTo(307,y+40);ctx.lineTo(320,y+24);ctx.lineWidth=4;ctx.strokeStyle="#fff";ctx.stroke();
+      rr(334,y+14,36,36,12);outline("#ff6b8b");
+      ctx.beginPath();ctx.moveTo(343,y+23);ctx.lineTo(361,y+41);ctx.moveTo(361,y+23);ctx.lineTo(343,y+41);ctx.lineWidth=4;ctx.strokeStyle="#fff";ctx.stroke();
+    }
+  });
+  ctx.restore();
+  if(!list.length)wrapText(FR.tab==="fr"?"Noch keine Freunde. Tippe auf + ADDEN und gib eine ID ein!":"Keine offenen Anfragen.",W/2,300,17,"#fff");
+  if(max>0){const th=50,ty=184+(FR.scroll/max)*(388-th);rr(391,ty,6,th,3);ctx.fillStyle="#a77bff";ctx.fill()}
+  if(MP.msgT>0){MP.msgT-=frameDt;rr(50,538,300,34,17);outline("#fffdf2");text(MP.msg,W/2,561,16,"#6bd96b")}
+  else if(FR.err)wrapText(FR.err,W/2,548,13,"#ff6b8b");
+}
+async function friendAct(kind,id){
+  const F=window.FB;if(!F||!F.user)return;
+  try{
+    if(kind==="accept"){await F.accept(id);toast("Freund hinzugefügt!");beep(880,.15,"triangle")}
+    else if(kind==="decline"){await F.decline(id);toast("Anfrage abgelehnt.")}
+    else if(kind==="remove"){FR.sel=null;await F.removeFriend(id);toast("Freund entfernt.")}
+  }catch(e){console.error(e);toast("Fehler: "+(e.code||e.message))}
+}
+function friendsClick(x,y){
+  if(hit(x,y,{x:120,y:584,w:160,h:40})){closeShop();return}
+  const u=window.FB&&window.FB.user;if(!u)return;
+  if(hit(x,y,{x:20,y:82,w:175,h:40})){FR.tab="fr";FR.scroll=0;FR.sel=null;beep(600,.05);return}
+  if(hit(x,y,{x:205,y:82,w:175,h:40})){FR.tab="rq";FR.scroll=0;FR.sel=null;beep(600,.05);return}
+  if(hit(x,y,{x:262,y:132,w:108,h:36})){openFriendDlg();return}
+  if(hit(x,y,{x:20,y:128,w:230,h:44})){
+    if(FR.myFid){try{navigator.clipboard.writeText(FR.myFid).then(()=>toast("ID kopiert!"),()=>toast("Kopieren nicht möglich."))}catch(e){toast("Kopieren nicht möglich.")}}
+    return;
+  }
+  if(y<180||y>576)return;
+  const sy=y+FR.scroll,i=Math.floor((sy-186)/72),ry=186+i*72;
+  if(i<0||sy-ry>64)return;
+  if(FR.tab==="fr"){
+    const id=friendList()[i];if(!id)return;
+    if(FR.sel===id&&hit(x,sy,{x:270,y:ry+14,w:102,h:36}))friendAct("remove",id);
+    else FR.sel=FR.sel===id?null:id;
+  }else{
+    const r=reqList()[i];if(!r)return;
+    if(hit(x,sy,{x:292,y:ry+14,w:36,h:36}))friendAct("accept",r.from);
+    else if(hit(x,sy,{x:334,y:ry+14,w:36,h:36}))friendAct("decline",r.from);
+  }
+}
+function openFriendDlg(){friendOpen=true;$a("friendDlg").hidden=false;$a("fdErr").textContent="";$a("fdIn").value="";setTimeout(()=>$a("fdIn").focus(),50)}
+function closeFriendDlg(){friendOpen=false;$a("friendDlg").hidden=true}
+async function doAddFriend(){
+  const F=window.FB,me=F&&F.user&&F.user.uid,fid=$a("fdIn").value.replace(/\s/g,"");
+  const err=m=>{$a("fdErr").textContent=m};
+  if(!me)return err("Bitte erst einloggen.");
+  if(!/^[1-9][0-9]{9}$/.test(fid))return err("Die ID hat genau 10 Ziffern.");
+  if(fid===FR.myFid)return err("Das ist deine eigene ID.");
+  err("Suche...");
+  try{
+    const f=await F.findByFid(fid);
+    if(!f)return err("Keine Person mit dieser ID gefunden.");
+    if(FR.ids.includes(f.uid))return err("Ihr seid schon befreundet.");
+    if(FR.reqs.some(r=>r.from===f.uid))return err("Diese Person hat dir schon eine Anfrage geschickt - siehe Anfragen.");
+    if(await F.requestExists(me,f.uid))return err("Die Anfrage wurde schon gesendet.");
+    await F.sendRequest(f.uid);
+    closeFriendDlg();toast("Anfrage an "+(f.name||"Spieler")+" gesendet!");
+  }catch(e){console.error(e);err("Fehler: "+(e.code||e.message))}
+}
+$a("fdOk").onclick=doAddFriend;$a("fdNo").onclick=closeFriendDlg;
+$a("fdIn").onkeydown=e=>{if(e.key==="Enter")doAddFriend()};
+$a("fdIn").oninput=e=>{e.target.value=e.target.value.replace(/[^0-9]/g,"")};
 
 // ---------- Leaderboard ----------
 const BD={best:null,bestH:null,total:null,err:null},BL={best:false,bestH:false,total:false},MED=["#ffd23f","#c0c8d8","#e0955a"];
@@ -1246,7 +1416,7 @@ function loop(now){
   while(acc>=STEP-2&&n<6){update();acc-=STEP;n++}
   if(n>=6)acc=0;
   draw();
-  if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();
+  if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="friends")drawFriends();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
@@ -1255,8 +1425,8 @@ requestAnimationFrame(loop);
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {getDatabase,ref,set,update,remove,onValue,get,onDisconnect} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import {getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,doc,getDoc,getDocFromServer,setDoc,collection,query,orderBy,limit,getDocs,getDocsFromServer} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getDatabase,ref,set,update,remove,onValue,get,onDisconnect,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import {getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,doc,getDoc,getDocFromServer,setDoc,collection,query,orderBy,limit,getDocs,getDocsFromServer,onSnapshot,where,writeBatch,deleteDoc,documentId} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 function makeDb(a){try{return initializeFirestore(a,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})})}catch(e){return getFirestore(a)}}
 // >>> HIER DEINE FIREBASE-DATEN EINTRAGEN (Schritt 2 der Anleitung) <<<
@@ -1282,6 +1452,26 @@ if(firebaseConfig.apiKey){
     backup:async d=>{const r=doc(db,"players",auth.currentUser.uid,"backups",new Date().toISOString().slice(0,10));const sn=await getDoc(r);if(!sn.exists())await setDoc(r,{...d,at:Date.now()})},
     latestBackup:async()=>{const sn=await getDocs(query(collection(db,"players",auth.currentUser.uid,"backups"),orderBy("at","desc"),limit(1)));return sn.empty?null:sn.docs[0].data()},
     resetPw:e=>sendPasswordResetEmail(auth,e),
+    ensureProfile:async(name,col,hat)=>{
+      const uid=auth.currentUser.uid,pr=doc(db,"profiles",uid),sn=await getDocFromServer(pr);
+      if(sn.exists()){const d=sn.data();if(d.name!==name||d.col!==col||d.hat!==hat)await setDoc(pr,{fid:d.fid,name,col,hat});return d.fid}
+      for(let i=0;i<12;i++){
+        const fid=String(1+Math.floor(Math.random()*9))+Array.from({length:9},()=>Math.floor(Math.random()*10)).join("");
+        try{await setDoc(doc(db,"fids",fid),{uid})}catch(e){if(e.code==="permission-denied")continue;throw e}
+        await setDoc(pr,{fid,name,col,hat});return fid;
+      }
+      throw Object.assign(new Error("Keine ID vergeben (Firestore-Regeln pruefen)"),{code:"id-failed"});
+    },
+    updateProfile:(fid,name,col,hat)=>setDoc(doc(db,"profiles",auth.currentUser.uid),{fid,name,col,hat}),
+    findByFid:async fid=>{const f=await getDocFromServer(doc(db,"fids",fid));if(!f.exists())return null;const uid=f.data().uid,p=await getDocFromServer(doc(db,"profiles",uid));return p.exists()?{uid,...p.data()}:null},
+    requestExists:async(from,to)=>(await getDocFromServer(doc(db,"requests",from+"_"+to))).exists(),
+    sendRequest:to=>setDoc(doc(db,"requests",auth.currentUser.uid+"_"+to),{from:auth.currentUser.uid,to,at:Date.now()}),
+    watchRequests:(uid,cb,eb)=>onSnapshot(query(collection(db,"requests"),where("to","==",uid)),sn=>cb(sn.docs.map(d=>d.data())),eb),
+    watchFriends:(uid,cb,eb)=>onSnapshot(collection(db,"friends",uid,"list"),sn=>cb(sn.docs.map(d=>d.id)),eb),
+    profiles:async ids=>{const out={};for(let i=0;i<ids.length;i+=10){const sn=await getDocsFromServer(query(collection(db,"profiles"),where(documentId(),"in",ids.slice(i,i+10))));sn.docs.forEach(d=>{out[d.id]=d.data()})}return out},
+    accept:async from=>{const me=auth.currentUser.uid,b=writeBatch(db),at=Date.now();b.set(doc(db,"friends",me,"list",from),{at});b.set(doc(db,"friends",from,"list",me),{at});b.delete(doc(db,"requests",from+"_"+me));await b.commit()},
+    decline:from=>deleteDoc(doc(db,"requests",from+"_"+auth.currentUser.uid)),
+    removeFriend:async fr=>{const me=auth.currentUser.uid,b=writeBatch(db);b.delete(doc(db,"friends",me,"list",fr));b.delete(doc(db,"friends",fr,"list",me));await b.commit()},
     save:d=>setDoc(pref(),d),
     board:async f=>{const sn=await getDocsFromServer(query(collection(db,"leaderboard"),orderBy(f,"desc"),limit(30)));return sn.docs.map(d=>({id:d.id,...d.data()})).filter(e=>(e[f]||0)>0)},
     pushBoard:async d=>{
@@ -1300,6 +1490,11 @@ if(firebaseConfig.apiKey){
       get:async p=>(await get(ref(rdb,p))).val(),
       watch:(p,cb)=>onValue(ref(rdb,p),sn=>cb(sn.val())),
       dc:p=>onDisconnect(ref(rdb,p)).remove()
+    };
+    window.PRES={
+      start:uid=>{const me=ref(rdb,"presence/"+uid);return onValue(ref(rdb,".info/connected"),sn=>{if(sn.val()!==true)return;onDisconnect(me).set({on:false,t:serverTimestamp()}).then(()=>set(me,{on:true,t:serverTimestamp()})).catch(e=>console.error(e))})},
+      stop:uid=>set(ref(rdb,"presence/"+uid),{on:false,t:serverTimestamp()}),
+      watch:(uid,cb)=>onValue(ref(rdb,"presence/"+uid),sn=>cb(sn.val()))
     };
   }
   onAuthStateChanged(auth,u=>{window.FB.user=u;window.dispatchEvent(new Event("fb-user"))});
