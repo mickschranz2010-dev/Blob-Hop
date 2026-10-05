@@ -1284,7 +1284,7 @@ function onRoom(r){
   MP.joined=true;MP.room=r;
   if(state==="spectate"&&r.state!=="playing")specLeave();
   {const prev=MP.prevState;MP.prevState=r.state;
-   if(prev==="playing"&&r.state==="lobby"&&(state==="lobby"||state==="spectate")){MP.resT=t;state="results";beep(880,.2,"triangle")}}
+   if(prev==="playing"&&r.state==="lobby"&&(state==="lobby"||state==="spectate")){MP.resT=t;MP.resPos={};MP.resSw={};MP.resDone=false;state="results";beep(880,.2,"triangle")}}
   if(MP.round===null)MP.round=r.round||0;
   const ps=r.players,ids=Object.keys(ps).sort((a,b)=>ps[a].slot-ps[b].slot);
   if(r.state==="playing"&&r.round!==MP.round&&!MP.active)startMP(r);
@@ -1445,7 +1445,16 @@ function resultsClick(x,y){
 }
 function drawResults(){
   const r=MP.room;if(!r){state="lobby";return}
-  const list=resList(),me=uid(),age=t-(MP.resT||0);
+  const me=uid(),age=t-(MP.resT||0);
+  if(!MP.resPos)MP.resPos={};if(!MP.resSw)MP.resSw={};
+  // Phase 1: alte Punkte stehen. Phase 2: neue Punkte zaehlen hoch, Karten sortieren sich neu.
+  const start=70,dur=130,prog=Math.min(1,Math.max(0,(age-start)/dur)),e=1-Math.pow(1-prog,2.2);
+  const list=resList().map(p=>{const fin=+p.total||0,old=Math.max(0,fin-(+p.score||0));return Object.assign({},p,{fin,old,val:Math.round(old+(fin-old)*e)})})
+    .sort((a,b)=>(b.val-a.val)||(a.slot-b.slot));
+  const counting=prog>0&&prog<1;
+  if(counting&&t%3===0&&list.some(p=>p.val!==p.fin))beep(700+(Math.random()*500|0),.025,"square",.025);
+  if(prog>=1&&!MP.resDone){MP.resDone=true;beep(1046,.15,"triangle",.08,200)}
+  list.forEach((p,i)=>{const c=MP.resPos[p.id];MP.resPos[p.id]=c===undefined?i:c+(i-c)*(1-Math.pow(.8,frameDt))});
   ctx.fillStyle="#bdeaff";ctx.fillRect(0,0,W,H);
   cloud((t*.2)%520-100,150,.9);cloud((t*.13+240)%520-100,300,1);
   shad(60,8,280,56,18);rr(60,8,280,56,18);outline("#ffd23f");
@@ -1458,18 +1467,25 @@ function drawResults(){
     shad(x,top,110,hh,12);rr(x,top,110,hh,12);outline(p?MED[i]:"#d9d2e9");
     if(hh>24)text(String(i+1),x+55,top+30,28);
     if(p&&grow>=1){
-      const hop=i===0?Math.abs(Math.sin(t*.1))*8:0;
+      const sw=MP.resSw[i]||(MP.resSw[i]={id:p.id,t0:-999});
+      if(sw.id!==p.id){sw.id=p.id;sw.t0=t}
+      const since=t-sw.t0,pop=since<24?Math.abs(Math.sin(since*.3))*14*(1-since/24):0;
+      const hop=(i===0?Math.abs(Math.sin(t*.1))*8:0)+pop;
       preview(x+55,top-22-hop,skinCol(p.col),p.hat||"none",1);
       text(String(p.name||"Spieler").slice(0,12),x+55,top-82-hop,15,"#fff");
-      text((+p.total||0)+" Pkt.",x+55,top+hh-8,14,"#fff");
+      text(p.val+" Pkt.",x+55,top+hh-8,14,counting&&p.val<p.fin?"#6bd96b":"#fff");
       if(i===0)for(let k=0;k<3;k++){const a=t*.05+k*2.1;ctx.beginPath();starPath(x+55+Math.cos(a)*44,top-30+Math.sin(a)*14,4+Math.sin(t*.3+k)*1.5);ctx.fillStyle="#fff6a8";ctx.fill()}
     }
   });
-  // vier Felder
-  for(let i=0;i<4;i++){
-    const y=346+i*56,p=list[i];
+  // vier Felder (gleiten an ihre neue Position)
+  for(let i=list.length;i<4;i++){
+    const y=346+i*56;shad(20,y,360,50,14);
+    rr(20,y,360,50,14);ctx.fillStyle="#fffbe8";ctx.fill();ctx.setLineDash([9,7]);ctx.lineWidth=3;ctx.strokeStyle="#c9b8ff";ctx.stroke();ctx.setLineDash([]);
+    text("-",W/2,y+33,22,"#c9b8ff");
+  }
+  list.slice().sort((a,b)=>MP.resPos[b.id]-MP.resPos[a.id]).forEach(p=>{
+    const i=list.indexOf(p),y=346+MP.resPos[p.id]*56,up=counting&&p.val<p.fin;
     shad(20,y,360,50,14);
-    if(!p){rr(20,y,360,50,14);ctx.fillStyle="#fffbe8";ctx.fill();ctx.setLineDash([9,7]);ctx.lineWidth=3;ctx.strokeStyle="#c9b8ff";ctx.stroke();ctx.setLineDash([]);text("-",W/2,y+33,22,"#c9b8ff");continue}
     rr(20,y,360,50,14);outline(p.id===me?"#d7ffd0":"#fffdf2");
     ctx.save();rr(20,y,360,50,14);ctx.clip();ctx.fillStyle=i<3?MED[i]:"#c9b8ff";ctx.fillRect(20,y,12,50);ctx.restore();
     rr(20,y,360,50,14);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
@@ -1481,8 +1497,8 @@ function drawResults(){
     ctx.beginPath();ctx.arc(94,y+25,18,0,7);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
     text(String(p.name||"Spieler").slice(0,13),122,y+23,17,"#fff","left");
     text("+"+(+p.score||0)+" diese Runde",122,y+41,12,"#6bd96b","left");
-    text((+p.total||0)+" Pkt.",366,y+32,20,"#ffd23f","right");
-  }
+    text(p.val+" Pkt.",366,y+32,up?22:20,up?"#6bd96b":"#ffd23f","right");
+  });
   btn3d(20,584,170,40,"ZUR LOBBY","#a77bff",19);
   btn3d(210,584,170,40,"BEREIT!","#6bd96b",22);
 }
