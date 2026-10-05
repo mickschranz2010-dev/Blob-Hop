@@ -169,7 +169,7 @@ function fit(){const pad=24,s=Math.min((innerWidth-pad)/W,(innerHeight-pad-12)/H
 addEventListener("resize",fit);fit();
 
 // ---------- Einstellungen ----------
-let ST={sound:true,vol:1,shake:true,fx:true,kl:"a",kr:"d"};
+let ST={sound:true,vol:1,shake:true,fx:true,fps:false,kl:"a",kr:"d"};
 try{Object.assign(ST,JSON.parse(localStorage.getItem("blobbo-set")))}catch(e){}
 function saveST(){try{localStorage.setItem("blobbo-set",JSON.stringify(ST))}catch(e){}}
 // ---------- Audio ----------
@@ -355,7 +355,7 @@ function shopClick(x,y){
   });
 }
 function btn(x,y,w,h,label,col){rr(x,y,w,h,14);outline(col);text(label,x+w/2,y+h*.7,h*.5)}
-const SROWS=[["Vollbild","fs"],["Sound","sound"],["Lautstärke","vol"],["Screenshake","shake"],["Effekte","fx"],["Taste Links","kl"],["Taste Rechts","kr"]];
+const SROWS=[["Vollbild","fs"],["Sound","sound"],["Lautstärke","vol"],["Screenshake","shake"],["Effekte","fx"],["FPS-Anzeige","fps"],["Taste Links","kl"],["Taste Rechts","kr"]];
 const isFS=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
 function toggleFS(){
   const d=document,el=d.documentElement,req=el.requestFullscreen||el.webkitRequestFullscreen;
@@ -368,11 +368,11 @@ function toggleFS(){
 }
 let bindKey=null;
 const kname=k=>{const m={" ":"Space",arrowleft:"←",arrowright:"→",arrowup:"↑",arrowdown:"↓"};return (m[k]||k).toUpperCase()};
-const RY=i=>84+i*60;
+const RY=i=>80+i*56;
 function setClick(x,y){
   if(hit(x,y,{x:120,y:584,w:160,h:40})){closeShop();return}
   SROWS.forEach(([l,k],i)=>{
-    if(!hit(x,y,{x:20,y:RY(i),w:360,h:50}))return;
+    if(!hit(x,y,{x:20,y:RY(i),w:360,h:48}))return;
     if(k==="fs")toggleFS();
     else if(k==="vol")ST.vol=(ST.vol+1)%3;
     else if(k==="kl"||k==="kr")bindKey=bindKey===k?null:k;
@@ -384,14 +384,14 @@ function drawSettings(){
   ctx.fillStyle="#ffe9a8";ctx.fillRect(0,0,W,H);
   text("SETTINGS",W/2,60,46,"#a77bff");
   SROWS.forEach(([l,k],i)=>{
-    const y=RY(i);rr(20,y,360,50,16);outline("#fffdf2");text(l,40,y+34,22,"#fff","left");
-    if(k==="vol"){rr(250,y+8,116,34,12);outline("#ffd23f");text(["Leise","Mittel","Laut"][ST.vol],308,y+32,20)}
-    else if(k==="kl"||k==="kr"){rr(236,y+8,130,34,12);outline(bindKey===k?"#ff6b8b":"#ffd23f");text(bindKey===k?"Taste...":kname(ST[k]),301,y+32,20)}
-    else{const on=k==="fs"?isFS():ST[k];rr(290,y+9,76,32,16);outline(on?"#6bd96b":"#c8c0d8");ctx.beginPath();ctx.arc(on?350:306,y+25,12,0,7);outline("#fff")}
+    const y=RY(i);rr(20,y,360,48,16);outline("#fffdf2");text(l,40,y+32,22,"#fff","left");
+    if(k==="vol"){rr(250,y+7,116,34,12);outline("#ffd23f");text(["Leise","Mittel","Laut"][ST.vol],308,y+31,20)}
+    else if(k==="kl"||k==="kr"){rr(236,y+7,130,34,12);outline(bindKey===k?"#ff6b8b":"#ffd23f");text(bindKey===k?"Taste...":kname(ST[k]),301,y+31,20)}
+    else{const on=k==="fs"?isFS():ST[k];rr(290,y+8,76,32,16);outline(on?"#6bd96b":"#c8c0d8");ctx.beginPath();ctx.arc(on?350:306,y+24,12,0,7);outline("#fff")}
   });
-  if(bindKey)text("Drück jetzt eine Taste (Esc = Abbrechen)",W/2,524,17,"#ff6b8b");
-  else if(msgT>0){msgT-=frameDt;text(msg,W/2,524,18,"#ff6b8b")}
-  text("Mehr Optionen bald!",W/2,560,20,"#ffd23f");
+  if(bindKey)text("Drück jetzt eine Taste (Esc = Abbrechen)",W/2,540,16,"#ff6b8b");
+  else if(msgT>0){msgT-=frameDt;text(msg,W/2,540,18,"#ff6b8b")}
+  text("Mehr Optionen bald!",W/2,568,18,"#ffd23f");
   btn(120,584,160,40,"Zurück","#5bb8ff");
 }
 function shopMax(){return Math.max(0,Math.ceil(ITEMS[tab].length/2)*150-448)}
@@ -487,7 +487,7 @@ function pop(x,y,txt,col="#fff"){pops.push({x,y,txt,col,l:1})}
 // ---------- Input ----------
 addEventListener("keydown",e=>{if(bindKey){if(e.key!=="Escape"){ST[bindKey]=e.key.toLowerCase();saveST();beep(760,.1,"triangle")}bindKey=null;e.preventDefault();return}if(state==="spectate"&&!admOpen&&!authOpen){if(e.key==="ArrowRight"||e.key==="ArrowLeft"||e.key===" "){specSwitch(e.key==="ArrowLeft"?-1:1);e.preventDefault()}if(e.key==="Escape")specLeave();return}
   if(INV.list.length&&e.key.toLowerCase()==="g"&&!admOpen&&!authOpen&&!joinOpen&&!friendOpen&&!invOpen&&!(state==="play"&&(ST.kl==="g"||ST.kr==="g"))){acceptInvite();e.preventDefault();return}
-  if(admOpen||authOpen||joinOpen||friendOpen||invOpen)return;seqBuf=(seqBuf+e.key).slice(-4);if(seqBuf==="2911"){seqBuf="";openAdmin();return}keys[e.key.toLowerCase()]=true;if((state==="shop"||state==="settings"||state==="mp"||state==="board"||state==="friends")&&e.key==="Escape")closeShop();if(state==="lobby"&&e.key==="Escape")leaveRoom();if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
+  if(admOpen||authOpen||joinOpen||friendOpen||invOpen)return;seqBuf=(seqBuf+e.key).slice(-4);if(seqBuf==="2911"){seqBuf="";openAdmin();return}keys[e.key.toLowerCase()]=true;if((state==="shop"||state==="settings"||state==="mp"||state==="board"||state==="friends")&&e.key==="Escape")closeShop();if(state==="lobby"&&e.key==="Escape")leaveRoom();if(state==="results"&&e.key==="Escape")state="lobby";if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
 addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 function gx(e){const r=c.getBoundingClientRect();return (e.clientX-r.left)/r.width*W}
 const dirOf=e=>{const r=c.getBoundingClientRect();return e.clientX<r.left+r.width/2?-1:1};
@@ -502,6 +502,7 @@ addEventListener("pointerdown",e=>{
   if(state==="board"){sd={x,y,sc:boardScroll,m:false,b:true};return}
   if(state==="friends"){sd={x,y,sc:FR.scroll,m:false,f:true};return}
   if(state==="lobby"){lobbyClick(x,y);return}
+  if(state==="results"){resultsClick(x,y);return}
   if(state==="spectate"){specClick(x,y);return}
   if((state==="menu"||state==="over")&&hit(x,y,SB)){state="shop";beep(500,.08,"triangle");return}
   if(state==="menu"&&hit(x,y,LB)){openBoard();return}
@@ -525,7 +526,7 @@ addEventListener("wheel",e=>{if(state==="shop")shopScroll+=e.deltaY;if(state==="
 addEventListener("blur",()=>{ptr=null;holdDir=0});
 addEventListener("pointerup",upF);addEventListener("pointercancel",upF);
 function start(){
-  if(state==="play"||state==="shop"||state==="settings"||state==="mp"||state==="lobby"||state==="board"||state==="spectate"||state==="friends")return;
+  if(state==="play"||state==="shop"||state==="settings"||state==="mp"||state==="lobby"||state==="board"||state==="spectate"||state==="friends"||state==="results")return;
   if(state==="over"&&t-overAt<40)return;
   reset();state="play";beep(520,.15,"triangle",.08,300);
 }
@@ -938,21 +939,31 @@ function drawInvite(){
   }
 }
 // --- Freunde einladen (Raum-Ersteller) ---
+let invSig="";
+function renderInvite(force){
+  if(!invOpen)return;
+  const box=$a("invList"),now=Date.now();
+  const rows=friendList().map(id=>({id,name:(FR.prof[id]||{}).name||"...",inRoom:!!(MP.room&&MP.room.players&&MP.room.players[id]),on:isOn(id),recent:now-(MP.sentAt[id]||0)<4000}));
+  const sig=JSON.stringify(rows.map(r=>[r.id,r.inRoom,r.on,r.recent]));
+  if(!force&&sig===invSig)return;
+  invSig=sig;box.innerHTML="";
+  if(!rows.length){box.textContent="Du hast noch keine Freunde. Füge sie im Freunde-Menü hinzu.";return}
+  rows.forEach(r=>{
+    const row=document.createElement("div");row.className="irow";
+    const nm=document.createElement("span");nm.className="in";nm.textContent=r.name;
+    const st=document.createElement("span");st.className="is"+(r.on?" on":"");st.textContent=r.inRoom?"im Raum":r.on?"online":"offline";
+    const b=document.createElement("button");
+    b.textContent=r.inRoom?"Im Raum":r.recent?"Gesendet ✓":"Einladen";
+    b.disabled=!r.on||r.inRoom||r.recent;
+    b.onclick=()=>sendInvite(r.id,b);
+    row.appendChild(nm);row.appendChild(st);row.appendChild(b);box.appendChild(row);
+  });
+}
+setInterval(()=>renderInvite(),1000);
 function openInvite(){
   if(!MP.room||MP.room.state!=="lobby"){toast("Einladen geht nur in der Lobby.");return}
   invOpen=true;$a("invDlg").hidden=false;$a("invErr").textContent="";
-  const box=$a("invList");box.innerHTML="";
-  const ids=friendList();
-  if(!ids.length){box.textContent="Du hast noch keine Freunde. Füge sie im Freunde-Menü hinzu.";return}
-  ids.forEach(id=>{
-    const p=FR.prof[id]||{},on=isOn(id),row=document.createElement("div");row.className="irow";
-    const nm=document.createElement("span");nm.className="in";nm.textContent=p.name||"...";
-    const st=document.createElement("span");st.className="is"+(on?" on":"");st.textContent=on?"online":"offline";
-    const b=document.createElement("button");
-    b.textContent=MP.sent.has(id)?"Gesendet ✓":"Einladen";b.disabled=!on||MP.sent.has(id);
-    b.onclick=()=>sendInvite(id,b);
-    row.appendChild(nm);row.appendChild(st);row.appendChild(b);box.appendChild(row);
-  });
+  renderInvite(true);
 }
 function closeInvite(){invOpen=false;$a("invDlg").hidden=true}
 async function sendInvite(to,btn){
@@ -961,7 +972,7 @@ async function sendInvite(to,btn){
     const path="invites/"+to+"/"+uid();
     await window.MPB.set(path,{name:String(SV.name||"Spieler").slice(0,14),code:MP.code,t:Date.now()});
     try{window.MPB.dc(path)}catch(e){}
-    MP.sent.add(to);btn.textContent="Gesendet ✓";btn.disabled=true;beep(760,.1,"triangle");
+    MP.sent.add(to);MP.sentAt[to]=Date.now();btn.textContent="Gesendet ✓";btn.disabled=true;beep(760,.1,"triangle");setTimeout(()=>renderInvite(),4100);
   }catch(e){console.error(e);$a("invErr").textContent="Fehler: "+(e.code||e.message)}
 }
 $a("invClose").onclick=closeInvite;
@@ -1209,7 +1220,7 @@ function drawBoard(){
 }
 
 // ---------- Multiplayer (Firebase Realtime Database) ----------
-const MP={sent:new Set(),code:null,room:null,unsub:null,active:false,round:null,joined:false,ghosts:{},msg:"",msgT:0,count:0,sendT:0};
+const MP={sent:new Set(),sentAt:{},code:null,room:null,unsub:null,active:false,round:null,joined:false,ghosts:{},msg:"",msgT:0,count:0,sendT:0};
 let joinOpen=false;
 const toast=m=>{MP.msg=m;MP.msgT=160};
 const uid=()=>window.FB.user.uid;
@@ -1244,7 +1255,7 @@ async function joinRoom(code){
   }catch(e){console.error(e);return "Fehler: "+(e.code||e.message)}
 }
 function enterRoom(code){
-  MP.code=code;MP.round=null;MP.joined=false;MP.room=null;MP.ghosts={};
+  MP.code=code;MP.round=null;MP.joined=false;MP.room=null;MP.ghosts={};MP.prevState=null;
   try{window.MPB.dc("rooms/"+code+"/players/"+uid());window.MPB.dc("rooms/"+code+"/pos/"+uid())}catch(e){}
   MP.unsub=window.MPB.watch("rooms/"+code,onRoom);
   state="lobby";beep(700,.15,"triangle",.08,300);
@@ -1272,6 +1283,8 @@ function onRoom(r){
   if(!r||!r.players||!me||!r.players[me]){if(MP.joined)mpReset("Raum wurde geschlossen.");return}
   MP.joined=true;MP.room=r;
   if(state==="spectate"&&r.state!=="playing")specLeave();
+  {const prev=MP.prevState;MP.prevState=r.state;
+   if(prev==="playing"&&r.state==="lobby"&&(state==="lobby"||state==="spectate")){MP.resT=t;state="results";beep(880,.2,"triangle")}}
   if(MP.round===null)MP.round=r.round||0;
   const ps=r.players,ids=Object.keys(ps).sort((a,b)=>ps[a].slot-ps[b].slot);
   if(r.state==="playing"&&r.round!==MP.round&&!MP.active)startMP(r);
@@ -1298,7 +1311,8 @@ function mpTick(){
 }
 function mpDied(total){
   MP.active=false;state="lobby";startSpectate();
-  window.MPB.update("rooms/"+MP.code,{["players/"+uid()+"/alive"]:false,["players/"+uid()+"/score"]:total,["players/"+uid()+"/ready"]:false,["pos/"+uid()]:null}).catch(()=>{});
+  const me0=MP.room&&MP.room.players&&MP.room.players[uid()],tot0=Math.max(0,(me0&&+me0.total)||0);
+  window.MPB.update("rooms/"+MP.code,{["players/"+uid()+"/alive"]:false,["players/"+uid()+"/score"]:total,["players/"+uid()+"/total"]:tot0+Math.max(0,Math.floor(total)),["players/"+uid()+"/ready"]:false,["pos/"+uid()]:null}).catch(()=>{});
 }
 function drawGhosts(cam=maxH,focus=null){
   const r=MP.room;if(!r||!r.pos||!r.players)return;
@@ -1363,8 +1377,9 @@ function drawLobby(){
   for(let k=0;k<5;k++){rr(84+k*48,88,40,40,10);outline("#fff");text(cd[k],104+k*48,119,30,"#ffd23f")}
   const r=MP.room,ps=(r&&r.players)||{},me=uid();
   const ids=Object.keys(ps).sort((a,b)=>ps[a].slot-ps[b].slot);
+  const order=Object.keys(ps).sort((a,b)=>((+ps[b].total||0)-(+ps[a].total||0))||(ps[a].slot-ps[b].slot));
   for(let i=0;i<4;i++){
-    const y=146+i*92,id=ids.find(k=>ps[k].slot===i),p=id?ps[id]:null;
+    const y=146+i*92,id=order[i],p=id?ps[id]:null;
     shad(20,y,360,84,16);
     if(!p){
       rr(20,y,360,84,16);ctx.fillStyle="#fffbe8";ctx.fill();ctx.setLineDash([9,7]);ctx.lineWidth=3;ctx.strokeStyle="#c9b8ff";ctx.stroke();ctx.setLineDash([]);
@@ -1386,10 +1401,10 @@ function drawLobby(){
     ctx.beginPath();ctx.arc(112,y+42,28,0,7);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
     text(p.name||"Spieler",152,y+34,20,"#fff","left");
     if(p.ready){
-      text("bereit",152,y+62,15,"#6bd96b","left");
+      text("bereit  -  "+(+p.total||0)+" Pkt.",152,y+62,15,"#6bd96b","left");
       ctx.save();ctx.translate(334,y+44);ctx.rotate(.12+Math.sin(t*.1)*.05);rr(-44,-16,88,32,10);outline("#6bd96b");text("BEREIT!",0,7,18);ctx.restore();
     }else{
-      text(p.alive?"spielt...":p.score>0?"Letzte Runde: "+p.score:"wartet...",152,y+62,15,"#fff","left");
+      text(p.alive?"spielt...":(+p.total||0)>0?(+p.total)+" Pkt.  (+"+(+p.score||0)+")":"wartet...",152,y+62,15,"#fff","left");
       ctx.fillStyle="#c9b8ff";for(let k=0;k<3;k++){ctx.beginPath();ctx.arc(322+k*14,y+44+Math.sin(t*.1+k)*4,4,0,7);ctx.fill()}
     }
   }
@@ -1405,8 +1420,8 @@ function lobbyClick(x,y){
     return;
   }
   {
-    const ps0=(MP.room&&MP.room.players)||{},taken=Object.values(ps0).map(p=>p.slot);
-    for(let i=0;i<4;i++)if(!taken.includes(i)&&hit(x,y,{x:282,y:146+i*92+24,w:92,h:34})){openInvite();return}
+    const ps0=(MP.room&&MP.room.players)||{},n0=Object.keys(ps0).length;
+    for(let i=n0;i<4;i++)if(hit(x,y,{x:282,y:146+i*92+24,w:92,h:34})){openInvite();return}
   }
   if(hit(x,y,{x:210,y:522,w:170,h:50})){leaveRoom();return}
   if(hit(x,y,{x:20,y:522,w:170,h:50})){
@@ -1414,6 +1429,62 @@ function lobbyClick(x,y){
     window.MPB.update("rooms/"+MP.code+"/players/"+uid(),{ready:!m.ready,name:SV.name||"Spieler",col:SV.eq.col,hat:SV.eq.hat}).catch(()=>{});
     beep(640,.08,"triangle");
   }
+}
+// --- Ergebnis nach jeder Runde ---
+function resList(){
+  const ps=(MP.room&&MP.room.players)||{};
+  return Object.keys(ps).map(id=>Object.assign({id},ps[id])).sort((a,b)=>((+b.total||0)-(+a.total||0))||((+b.score||0)-(+a.score||0))||(a.slot-b.slot));
+}
+function setReady(v){
+  const m=MP.room&&MP.room.players&&MP.room.players[uid()];if(!m)return;
+  window.MPB.update("rooms/"+MP.code+"/players/"+uid(),{ready:v,name:SV.name||"Spieler",col:SV.eq.col,hat:SV.eq.hat}).catch(()=>{});
+}
+function resultsClick(x,y){
+  if(hit(x,y,{x:20,y:584,w:170,h:40})){state="lobby";beep(500,.08,"triangle");return}
+  if(hit(x,y,{x:210,y:584,w:170,h:40})){setReady(true);state="lobby";beep(640,.08,"triangle")}
+}
+function drawResults(){
+  const r=MP.room;if(!r){state="lobby";return}
+  const list=resList(),me=uid(),age=t-(MP.resT||0);
+  ctx.fillStyle="#bdeaff";ctx.fillRect(0,0,W,H);
+  cloud((t*.2)%520-100,150,.9);cloud((t*.13+240)%520-100,300,1);
+  shad(60,8,280,56,18);rr(60,8,280,56,18);outline("#ffd23f");
+  text("ERGEBNIS",W/2,40,30);text("Runde "+(r.round||1),W/2,57,13,"#fff");
+  // Podeste
+  const base=330;
+  [{i:1,x:28,h:80},{i:0,x:145,h:110},{i:2,x:262,h:56}].forEach(({i,x,h})=>{
+    const p=list[i],grow=Math.min(1,Math.max(0,(age-i*8)/30)),hh=h*(1-Math.pow(1-grow,3)),top=base-hh;
+    if(hh<2)return;
+    shad(x,top,110,hh,12);rr(x,top,110,hh,12);outline(p?MED[i]:"#d9d2e9");
+    if(hh>24)text(String(i+1),x+55,top+30,28);
+    if(p&&grow>=1){
+      const hop=i===0?Math.abs(Math.sin(t*.1))*8:0;
+      preview(x+55,top-22-hop,skinCol(p.col),p.hat||"none",1);
+      text(String(p.name||"Spieler").slice(0,12),x+55,top-82-hop,15,"#fff");
+      text((+p.total||0)+" Pkt.",x+55,top+hh-8,14,"#fff");
+      if(i===0)for(let k=0;k<3;k++){const a=t*.05+k*2.1;ctx.beginPath();starPath(x+55+Math.cos(a)*44,top-30+Math.sin(a)*14,4+Math.sin(t*.3+k)*1.5);ctx.fillStyle="#fff6a8";ctx.fill()}
+    }
+  });
+  // vier Felder
+  for(let i=0;i<4;i++){
+    const y=346+i*56,p=list[i];
+    shad(20,y,360,50,14);
+    if(!p){rr(20,y,360,50,14);ctx.fillStyle="#fffbe8";ctx.fill();ctx.setLineDash([9,7]);ctx.lineWidth=3;ctx.strokeStyle="#c9b8ff";ctx.stroke();ctx.setLineDash([]);text("-",W/2,y+33,22,"#c9b8ff");continue}
+    rr(20,y,360,50,14);outline(p.id===me?"#d7ffd0":"#fffdf2");
+    ctx.save();rr(20,y,360,50,14);ctx.clip();ctx.fillStyle=i<3?MED[i]:"#c9b8ff";ctx.fillRect(20,y,12,50);ctx.restore();
+    rr(20,y,360,50,14);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
+    ctx.beginPath();ctx.arc(54,y+25,13,0,7);outline(i<3?MED[i]:"#fff");text(String(i+1),54,y+32,17,i<3?"#fff":"#a77bff");
+    ctx.save();ctx.beginPath();ctx.arc(94,y+25,18,0,7);ctx.clip();
+    ctx.fillStyle="#8fe3ff";ctx.fillRect(76,y+7,36,36);
+    preview(94,y+16,skinCol(p.col),p.hat||"none",.5);
+    ctx.restore();
+    ctx.beginPath();ctx.arc(94,y+25,18,0,7);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
+    text(String(p.name||"Spieler").slice(0,13),122,y+23,17,"#fff","left");
+    text("+"+(+p.score||0)+" diese Runde",122,y+41,12,"#6bd96b","left");
+    text((+p.total||0)+" Pkt.",366,y+32,20,"#ffd23f","right");
+  }
+  btn3d(20,584,170,40,"ZUR LOBBY","#a77bff",19);
+  btn3d(210,584,170,40,"BEREIT!","#6bd96b",22);
 }
 // --- Zuschauer-Modus ---
 const pingpong=(v,max)=>{const m=((v%(2*max))+2*max)%(2*max);return m>max?2*max-m:m};
@@ -1536,19 +1607,21 @@ $("restore").onclick=async()=>{
 
 reset();state="menu";
 const STEP=1000/60;
-let lastT=performance.now(),acc=0;
+let lastT=performance.now(),acc=0,fpsN=0,fpsT=performance.now(),fpsV=0;
 function loop(now){
   now=now||performance.now();
   let dt=now-lastT;lastT=now;
   if(dt>250||dt<0)dt=STEP;
   frameDt=Math.min(4,dt/STEP);
+  fpsN++;if(now-fpsT>=500){fpsV=Math.round(fpsN*1000/(now-fpsT));fpsN=0;fpsT=now}
   acc+=dt;
   let n=0;
   while(acc>=STEP-2&&n<6){update();acc-=STEP;n++}
   if(n>=6)acc=0;
   draw();
-  if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="friends")drawFriends();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();
+  if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="friends")drawFriends();if(state==="results")drawResults();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();
   drawInvite();
+  if(ST.fps)text(fpsV+" FPS",W-8,H-8,12,"#fff","right");
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
