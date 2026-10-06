@@ -174,10 +174,13 @@ try{Object.assign(ST,JSON.parse(localStorage.getItem("blobbo-set")))}catch(e){}
 function saveST(){try{localStorage.setItem("blobbo-set",JSON.stringify(ST))}catch(e){}}
 // ---------- Audio ----------
 let AC=null;
+function unlockAudio(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume()}catch(e){}}
+addEventListener("pointerdown",unlockAudio,{passive:true});addEventListener("touchend",unlockAudio,{passive:true});addEventListener("keydown",unlockAudio);
 function beep(f,d=.12,type="square",v=.06,slide=0){
   if(!ST.sound)return;
   try{
     AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended")AC.resume();
     const o=AC.createOscillator(),g=AC.createGain();
     o.type=type;o.frequency.value=f;
     if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(40,f+slide),AC.currentTime+d);
@@ -391,7 +394,7 @@ function drawSettings(){
   });
   if(bindKey)text("Drück jetzt eine Taste (Esc = Abbrechen)",W/2,540,16,"#ff6b8b");
   else if(msgT>0){msgT-=frameDt;text(msg,W/2,540,18,"#ff6b8b")}
-  text("Mehr Optionen bald!",W/2,568,18,"#ffd23f");
+  text("Version "+VER,W/2,568,16,"#ffd23f");
   btn(120,584,160,40,"Zurück","#5bb8ff");
 }
 function shopMax(){return Math.max(0,Math.ceil(ITEMS[tab].length/2)*150-448)}
@@ -1226,7 +1229,16 @@ const toast=m=>{MP.msg=m;MP.msgT=160};
 const uid=()=>window.FB.user.uid;
 const mpOK=()=>!!(window.MPB&&window.FB&&window.FB.user);
 function mpWhy(){return !window.MPB?"Multiplayer ist nicht eingerichtet (Realtime Database).":"Bitte erst einloggen (LOG IN)."}
-const myInfo=slot=>({name:SV.name||"Spieler",col:SV.eq.col,hat:SV.eq.hat,ready:false,alive:false,score:0,slot});
+const VER=14;
+let lobbyFlag=null;
+function lobbySync(){
+  if(!MP.code||!MP.joined||!window.MPB||!window.FB||!window.FB.user)return;
+  const want=state==="lobby";
+  if(lobbyFlag===want)return;
+  lobbyFlag=want;
+  window.MPB.update("rooms/"+MP.code+"/players/"+uid(),{inLobby:want}).catch(()=>{lobbyFlag=null});
+}
+const myInfo=slot=>({name:SV.name||"Spieler",col:SV.eq.col,hat:SV.eq.hat,ready:false,alive:false,score:0,slot,v:VER,inLobby:true});
 function genCode(){const a="ABCDEFGHJKMNPQRSTUVWXYZ23456789";let c="";for(let i=0;i<5;i++)c+=a[Math.random()*a.length|0];return c}
 async function createRoom(){
   if(!mpOK()){toast(mpWhy());return}
@@ -1255,7 +1267,7 @@ async function joinRoom(code){
   }catch(e){console.error(e);return "Fehler: "+(e.code||e.message)}
 }
 function enterRoom(code){
-  MP.code=code;MP.round=null;MP.joined=false;MP.room=null;MP.ghosts={};MP.prevState=null;
+  MP.code=code;MP.round=null;MP.joined=false;MP.room=null;MP.ghosts={};MP.prevState=null;MP.played=0;MP.resRound=0;lobbyFlag=null;
   try{window.MPB.dc("rooms/"+code+"/players/"+uid());window.MPB.dc("rooms/"+code+"/pos/"+uid())}catch(e){}
   MP.unsub=window.MPB.watch("rooms/"+code,onRoom);
   state="lobby";beep(700,.15,"triangle",.08,300);
@@ -1263,7 +1275,7 @@ function enterRoom(code){
 function mpReset(msg){
   cleanInvites();
   if(MP.unsub){try{MP.unsub()}catch(e){}}
-  MP.unsub=null;MP.code=null;MP.room=null;MP.active=false;MP.round=null;MP.joined=false;MP.ghosts={};MP.spec=null;
+  MP.unsub=null;MP.code=null;MP.room=null;MP.active=false;MP.round=null;MP.joined=false;MP.ghosts={};MP.spec=null;MP.played=0;MP.resRound=0;lobbyFlag=null;
   reset();state="mp";if(msg)toast(msg);
 }
 async function leaveRoom(){
@@ -1283,13 +1295,15 @@ function onRoom(r){
   if(!r||!r.players||!me||!r.players[me]){if(MP.joined)mpReset("Raum wurde geschlossen.");return}
   MP.joined=true;MP.room=r;
   if(state==="spectate"&&r.state!=="playing")specLeave();
-  {const prev=MP.prevState;MP.prevState=r.state;
-   if(prev==="playing"&&r.state==="lobby"&&(state==="lobby"||state==="spectate")){MP.resT=t;MP.resPos={};MP.resSw={};MP.resDone=false;state="results";beep(880,.2,"triangle")}}
+  MP.prevState=r.state;
+  if(r.state==="lobby"&&MP.played&&MP.played===r.round&&MP.resRound!==r.round&&(state==="lobby"||state==="spectate")){
+    MP.resRound=r.round;MP.resT=t;MP.resPos={};MP.resSw={};MP.resDone=false;state="results";beep(880,.2,"triangle");
+  }
   if(MP.round===null)MP.round=r.round||0;
   const ps=r.players,ids=Object.keys(ps).sort((a,b)=>ps[a].slot-ps[b].slot);
   if(r.state==="playing"&&r.round!==MP.round&&!MP.active)startMP(r);
   if(ids[0]===me){
-    if(r.state==="lobby"&&ids.length>=2&&ids.every(i=>ps[i].ready)){
+    if(r.state==="lobby"&&ids.length>=2&&ids.every(i=>ps[i].ready&&ps[i].inLobby!==false)){
       const u={state:"playing",seed:(Math.random()*1e9)|0,round:(r.round||0)+1};
       ids.forEach(i=>{u["players/"+i+"/alive"]=true;u["players/"+i+"/ready"]=false;u["players/"+i+"/score"]=0});
       window.MPB.update("rooms/"+MP.code,u).catch(()=>{});
@@ -1299,7 +1313,7 @@ function onRoom(r){
   }
 }
 function startMP(r){
-  cleanInvites();MP.round=r.round;MP.active=true;MP.ghosts={};MP.sendT=0;MP.spec=null;
+  cleanInvites();MP.round=r.round;MP.played=r.round;MP.active=true;MP.ghosts={};MP.sendT=0;MP.spec=null;
   rnd=mulberry32(r.seed||1);
   reset();state="play";MP.count=150;
   beep(520,.15,"triangle",.08,300);
@@ -1404,7 +1418,7 @@ function drawLobby(){
       text("bereit  -  "+(+p.total||0)+" Pkt.",152,y+62,15,"#6bd96b","left");
       ctx.save();ctx.translate(334,y+44);ctx.rotate(.12+Math.sin(t*.1)*.05);rr(-44,-16,88,32,10);outline("#6bd96b");text("BEREIT!",0,7,18);ctx.restore();
     }else{
-      text(p.alive?"spielt...":(+p.total||0)>0?(+p.total)+" Pkt.  (+"+(+p.score||0)+")":"wartet...",152,y+62,15,"#fff","left");
+      text(p.alive?"spielt...":p.inLobby===false?"schaut Ergebnis...":(+p.total||0)>0?(+p.total)+" Pkt.  (+"+(+p.score||0)+")":"wartet...",152,y+62,15,"#fff","left");
       ctx.fillStyle="#c9b8ff";for(let k=0;k<3;k++){ctx.beginPath();ctx.arc(322+k*14,y+44+Math.sin(t*.1+k)*4,4,0,7);ctx.fill()}
     }
   }
@@ -1412,7 +1426,8 @@ function drawLobby(){
   btn3d(20,522,170,50,m&&m.ready?"NICHT BEREIT":"BEREIT!",m&&m.ready?"#ffd23f":"#6bd96b",24);
   btn3d(210,522,170,50,"VERLASSEN","#ff6b8b",24);
   if(MP.msgT>0){MP.msgT-=frameDt;wrapText(MP.msg,W/2,603,16,"#ff6b8b")}
-  else text(ids.length<2?"Warte auf mindestens einen Mitspieler":"Los geht es, sobald alle bereit sind",W/2,606,16,"#fff");
+  else if(ids.some(k=>ps[k].v!==VER))wrapText("Ein Mitspieler hat eine andere Spielversion. Bitte alle die Seite neu laden!",W/2,598,12,"#ff6b8b");
+  else text(ids.length<2?"Warte auf mindestens einen Mitspieler":"Los geht es, sobald alle in der Lobby und bereit sind",W/2,606,14,"#fff");
 }
 function lobbyClick(x,y){
   if(hit(x,y,{x:60,y:58,w:280,h:76})){
@@ -1440,8 +1455,7 @@ function setReady(v){
   window.MPB.update("rooms/"+MP.code+"/players/"+uid(),{ready:v,name:SV.name||"Spieler",col:SV.eq.col,hat:SV.eq.hat}).catch(()=>{});
 }
 function resultsClick(x,y){
-  if(hit(x,y,{x:20,y:584,w:170,h:40})){state="lobby";beep(500,.08,"triangle");return}
-  if(hit(x,y,{x:210,y:584,w:170,h:40})){setReady(true);state="lobby";beep(640,.08,"triangle")}
+  if(hit(x,y,{x:80,y:584,w:240,h:40})){state="lobby";beep(500,.08,"triangle")}
 }
 function drawResults(){
   const r=MP.room;if(!r){state="lobby";return}
@@ -1499,8 +1513,7 @@ function drawResults(){
     text("+"+(+p.score||0)+" diese Runde",122,y+41,12,"#6bd96b","left");
     text(p.val+" Pkt.",366,y+32,up?22:20,up?"#6bd96b":"#ffd23f","right");
   });
-  btn3d(20,584,170,40,"ZUR LOBBY","#a77bff",19);
-  btn3d(210,584,170,40,"BEREIT!","#6bd96b",22);
+  btn3d(80,584,240,40,"ZURÜCK ZUR LOBBY","#a77bff",21);
 }
 // --- Zuschauer-Modus ---
 const pingpong=(v,max)=>{const m=((v%(2*max))+2*max)%(2*max);return m>max?2*max-m:m};
@@ -1637,6 +1650,7 @@ function loop(now){
   draw();
   if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="friends")drawFriends();if(state==="results")drawResults();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();
   drawInvite();
+  lobbySync();
   if(ST.fps)text(fpsV+" FPS",W-8,H-8,12,"#fff","right");
   requestAnimationFrame(loop);
 }
