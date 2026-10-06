@@ -198,10 +198,10 @@ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let z=Math.imul(a
 const keys={};let ptr=null,rel=null,holdDir=0;
 // ---------- Shop-Daten ----------
 const ITEMS={
- col:[{id:"orange",n:"Orange",p:0,v:"#ff8c42"},{id:"mint",n:"Minze",p:30,v:"#4fd6a4"},{id:"pink",n:"Bubblegum",p:40,v:"#ff7eb6"},{id:"blue",n:"Wolke",p:50,v:"#5bb8ff"},{id:"red",n:"Tomate",p:60,v:"#ff5b5b"},{id:"lime",n:"Limette",p:70,v:"#b8e84a"},{id:"purple",n:"Traube",p:80,v:"#a77bff"},{id:"teal",n:"Lagune",p:90,v:"#2ec4b6"},{id:"night",n:"Schatten",p:110,v:"#6b5b95"},{id:"gold",n:"Gold",p:150,v:"#ffd23f"},{id:"ice",n:"Eiskristall",p:250,v:"#aef3ff"},{id:"rainbow",n:"Regenbogen",p:500,v:"rainbow"}],
+ col:[{id:"orange",n:"Orange",p:0,v:"#ff8c42"},{id:"mint",n:"Minze",p:30,v:"#4fd6a4"},{id:"pink",n:"Bubblegum",p:40,v:"#ff7eb6"},{id:"blue",n:"Wolke",p:50,v:"#5bb8ff"},{id:"coral",n:"Koralle",p:55,v:"#ff7f6e"},{id:"red",n:"Tomate",p:60,v:"#ff5b5b"},{id:"lemon",n:"Zitrone",p:65,v:"#ffe84a"},{id:"lime",n:"Limette",p:70,v:"#b8e84a"},{id:"purple",n:"Traube",p:80,v:"#a77bff"},{id:"choco",n:"Schoko",p:85,v:"#8a5a3c"},{id:"teal",n:"Lagune",p:90,v:"#2ec4b6"},{id:"rose",n:"Rosé",p:95,v:"#ff9ec4"},{id:"night",n:"Schatten",p:110,v:"#6b5b95"},{id:"gold",n:"Gold",p:150,v:"#ffd23f"},{id:"sunstripe",n:"Sonnenstreifen",p:150,v:"sunstripe"},{id:"tiger",n:"Tiger",p:180,v:"tiger"},{id:"bee",n:"Biene",p:200,v:"bee"},{id:"candy",n:"Zuckerstange",p:220,v:"candy"},{id:"ice",n:"Eiskristall",p:250,v:"#aef3ff"},{id:"zebra",n:"Zebra",p:250,v:"zebra"},{id:"sunset",n:"Sonnenuntergang",p:300,v:"sunset"},{id:"ocean",n:"Ozean",p:300,v:"ocean"},{id:"flow",n:"Wellen",p:350,v:"flow"},{id:"runner",n:"Laufstreifen",p:400,v:"runner"},{id:"fire",n:"Feuer",p:450,v:"fire"},{id:"rainstripe",n:"Regenbogenstreifen",p:450,v:"rainstripe"},{id:"rainbow",n:"Regenbogen",p:500,v:"rainbow"},{id:"neon",n:"Neon",p:500,v:"neon"},{id:"aurora",n:"Polarlicht",p:650,v:"aurora"},{id:"galaxy",n:"Galaxie",p:800,v:"galaxy"}],
  hat:[{id:"none",n:"Kein Hut",p:0},{id:"cap",n:"Kappe",p:40},{id:"flower",n:"Blume",p:50},{id:"party",n:"Partyhut",p:60},{id:"chef",n:"Kochmütze",p:70},{id:"top",n:"Zylinder",p:80},{id:"cowboy",n:"Cowboyhut",p:90},{id:"horns",n:"Teufelshörner",p:100},{id:"wizard",n:"Zauberhut",p:110},{id:"halo",n:"Heiligenschein",p:120},{id:"propeller",n:"Propellerkappe",p:130},{id:"bunny",n:"Hasenohren",p:140},{id:"raincloud",n:"Regenwolke",p:160},{id:"sunflower",n:"Sonnenblume",p:180},{id:"crown",n:"Krone",p:200},{id:"ufo",n:"Ufo",p:300},{id:"flame",n:"Flammen",p:350},{id:"disco",n:"Discokugel",p:450},{id:"legend",n:"Sternenkrone",p:2000}],
  pad:[{id:"none",n:"Standard",p:0},{id:"log",n:"Baumstamm",p:50},{id:"baguette",n:"Baguette",p:60},{id:"cloud",n:"Wolke",p:70},{id:"snake",n:"Schlange",p:80},{id:"ice",n:"Eisscholle",p:90},{id:"candy",n:"Zuckerstange",p:100},{id:"hotdog",n:"Hotdog",p:130},{id:"sushi",n:"Sushi",p:150},{id:"rainbow",n:"Regenbogen",p:300}],
- trail:[{id:"none",n:"Keine Spur",p:0},{id:"bubble",n:"Blasen",p:40},{id:"leaf",n:"Blätter",p:50},{id:"spark",n:"Funken",p:60},{id:"heart",n:"Herzen",p:90},{id:"rainbow",n:"Regenbogen",p:120},{id:"fire",n:"Feuer",p:150},{id:"star",n:"Sterne",p:180},{id:"galaxy",n:"Galaxie",p:300}]
+ trail:[{id:"none",n:"Keine Spur",p:0},{id:"bubble",n:"Blasen",p:40},{id:"leaf",n:"Blätter",p:50},{id:"spark",n:"Funken",p:60},{id:"heart",n:"Herzen",p:90},{id:"rainbow",n:"Regenbogen",p:120},{id:"fire",n:"Feuer",p:150},{id:"star",n:"Sterne",p:180},{id:"galaxy",n:"Galaxie",p:300},{id:"rainbowtail",n:"Regenbogenschweif",p:2000}]
 };
 
 let SV={coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}};
@@ -252,6 +252,63 @@ function colV(id){return ITEMS.col.find(i=>i.id===id).v}
 let ovr=null,tab="col",msg="",msgT=0,gain=0,shopScroll=0,sd=null;
 const SB={x:120,y:356,w:160,h:44};
 function hit(x,y,r){return x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h}
+const RB=["#ff4d4d","#ff9a3c","#ffd23f","#6bd96b","#4dabff","#a77bff"];
+const trailHist=[];
+function grad(stops,x0=0,y0=-19,x1=0,y1=19){const g=ctx.createLinearGradient(x0,y0,x1,y1);stops.forEach(([o,c])=>g.addColorStop(Math.max(0,Math.min(1,o)),c));return g}
+function stripes(cols,n,phase,ang){
+  const a=ang*Math.PI/180,dx=Math.sin(a)*19,dy=Math.cos(a)*19,g=ctx.createLinearGradient(-dx,-dy,dx,dy);
+  const L=cols.length,bw=1/n,per=bw*L,ph=((phase%per)+per)%per;
+  for(let k=-L;k<=n;k++){
+    const s0=k*bw+ph,e0=s0+bw,c=cols[((k%L)+L)%L];
+    if(e0<=0||s0>=1)continue;
+    g.addColorStop(Math.max(0,s0),c);g.addColorStop(Math.max(0,Math.min(1,e0-1e-4)),c);
+  }
+  return g;
+}
+const COLFX={
+  rainbow:()=>`hsl(${t*3%360},85%,62%)`,
+  sunstripe:()=>stripes(["#ff8c42","#ffd23f"],7,0,0),
+  tiger:()=>stripes(["#ff9a3c","#ff9a3c","#4a2a12"],9,0,20),
+  bee:()=>stripes(["#ffd23f","#2b2140"],7,0,90),
+  candy:()=>stripes(["#ff4d6d","#ffffff"],8,0,45),
+  zebra:()=>stripes(["#ffffff","#2b2140"],8,0,75),
+  rainstripe:()=>stripes(RB,6,0,0),
+  sunset:()=>grad([[0,"#ffd23f"],[.4,"#ff8c42"],[.7,"#ff4d8d"],[1,"#8a4dff"]]),
+  ocean:()=>grad([[0,"#9be7ff"],[.5,"#2e86de"],[1,"#1b3b8a"]]),
+  flow:()=>stripes(["#5bb8ff","#b8e8ff"],7,t*.006,0),
+  runner:()=>stripes(["#ff8c42","#ffd23f"],7,t*.008,45),
+  fire:()=>{const f=Math.sin(t*.2)*.08;return grad([[0,"#8a1b1b"],[.3+f,"#ff3b3b"],[.65+f,"#ff9a3c"],[1,"#ffe45e"]])},
+  neon:()=>`hsl(${180+120*(.5+.5*Math.sin(t*.05))},100%,${58+8*Math.sin(t*.12)}%)`,
+  aurora:()=>{const h=140+40*Math.sin(t*.03);return grad([[0,`hsl(${h},85%,60%)`],[.5,`hsl(${h+60},85%,60%)`],[1,`hsl(${h+130},80%,55%)`]],-19,-19,19,19)},
+  galaxy:()=>{const g=ctx.createRadialGradient(-6,-6,2,0,0,20);g.addColorStop(0,"#6a3fb5");g.addColorStop(.6,"#2a1763");g.addColorStop(1,"#0d0a2e");return g}
+};
+const blobFill=c=>COLFX[c]?COLFX[c]():c;
+function galaxyStars(){
+  ctx.save();ctx.beginPath();ctx.arc(0,0,P.r-1,0,7);ctx.clip();
+  const ga=ctx.globalAlpha;
+  for(let k=0;k<8;k++){
+    ctx.globalAlpha=ga*(.35+.65*Math.abs(Math.sin(t*.07+k*1.7)));
+    ctx.beginPath();starPath(Math.sin(k*2.1)*12,Math.cos(k*3.3)*12,2+(k%3)*.6);ctx.fillStyle="#fff";ctx.fill();
+  }
+  ctx.globalAlpha=ga;ctx.restore();
+}
+function drawRainbowTrail(){
+  const h=trailHist,n=h.length;if(n<3)return;
+  const ga=ctx.globalAlpha;
+  ctx.save();ctx.lineCap="round";
+  for(let k=0;k<RB.length;k++){
+    const off=k-(RB.length-1)/2;ctx.strokeStyle=RB[k];
+    for(let i=1;i<n;i++){
+      const a=h[i-1],b=h[i],f=i/n,w=7*(.25+.75*f);
+      let dx=b.x-a.x,dy=b.y-a.y;const L=Math.hypot(dx,dy);if(L<.4)continue;
+      dx/=L;dy/=L;
+      const o=off*w*.9+Math.sin(i*.55-t*.3)*2*(1-f);
+      ctx.globalAlpha=ga*(.2+.8*f);ctx.lineWidth=w;
+      ctx.beginPath();ctx.moveTo(a.x-dy*o,a.y+dx*o);ctx.lineTo(b.x-dy*o,b.y+dx*o);ctx.stroke();
+    }
+  }
+  ctx.globalAlpha=ga;ctx.restore();
+}
 function starPath(x,y,r){ctx.moveTo(x,y-r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.quadraticCurveTo(x,y,x,y+r);ctx.quadraticCurveTo(x,y,x-r,y);ctx.quadraticCurveTo(x,y,x,y-r)}
 function heartPath(x,y,r){ctx.moveTo(x,y+r*.9);ctx.bezierCurveTo(x-r*1.6,y-r*.2,x-r*.7,y-r*1.4,x,y-r*.5);ctx.bezierCurveTo(x+r*.7,y-r*1.4,x+r*1.6,y-r*.2,x,y+r*.9)}
 function drawHat2(h){
@@ -399,6 +456,15 @@ function drawSettings(){
 }
 function shopMax(){return Math.max(0,Math.ceil(ITEMS[tab].length/2)*150-448)}
 function trailPrev(id,cx,cy){
+  if(id==="rainbowtail"){
+    ctx.lineCap="round";ctx.lineJoin="round";ctx.lineWidth=4;
+    for(let k=0;k<6;k++){
+      ctx.strokeStyle=RB[k];ctx.beginPath();
+      for(let i=0;i<=14;i++){const f=i/14,x=cx+10+i*4.3,y=cy+54+(k-2.5)*5*(.35+.65*f)+Math.sin(i*.6-t*.2)*2*(1-f);i?ctx.lineTo(x,y):ctx.moveTo(x,y)}
+      ctx.stroke();
+    }
+    ctx.lineCap="butt";return;
+  }
   const cm={bubble:"#fff",leaf:"#6bd96b",spark:"#ffd23f",heart:"#ff6b8b",fire:"#ff8c42",star:"#ffd23f",galaxy:"#8a7bff"};
   for(let k=0;k<3;k++){
     const x=cx+24+k*10,y=cy+34+k*14;ctx.beginPath();
@@ -437,6 +503,7 @@ function drawShop(){
 }
 
 function reset(){
+  trailHist.length=0;
   if(!MP.active)rnd=Math.random;
   genAlt=0;
   P={x:W/2,y:H-120,vx:0,vy:-11,sx:1,sy:1,face:1,r:19};
@@ -565,7 +632,12 @@ function update(){
   if(P.x<-P.r)P.x=W+P.r;if(P.x>W+P.r)P.x=-P.r;
   P.vy+=.45;P.y+=P.vy;
   const tr=SV.eq.trail;
-  if(tr!=="none"&&t%2===0)emitTrail(tr);
+  if(tr!=="none"&&tr!=="rainbowtail"&&t%2===0)emitTrail(tr);
+  if(tr==="rainbowtail"){
+    const q=trailHist[trailHist.length-1];if(q&&Math.abs(P.x-q.x)>W/2)trailHist.length=0;
+    trailHist.push({x:P.x,y:P.y});if(trailHist.length>24)trailHist.shift();
+    if(ST.fx&&t%3===0)parts.push({x:P.x+(Math.random()-.5)*26,y:P.y+8+Math.random()*30,vx:0,vy:.5,g:0,l:.6,col:"#fff",sh:"star",r:4});
+  }else if(trailHist.length)trailHist.length=0;
   if(ST.fx)hatFx(SV.eq.hat);
   if(ST.fx&&SV.eq.hat==="legend"&&t%3===0)parts.push({x:P.x+(Math.random()-.5)*34,y:P.y-30*P.sy+(Math.random()-.5)*14,vx:(Math.random()-.5)*.6,vy:-.4,g:0,l:.7,col:Math.random()<.5?"#fff6a8":"#ffd23f",sh:"star",r:5});
   P.sx+=(1-P.sx)*.18;P.sy+=(1-P.sy)*.18;
@@ -598,7 +670,7 @@ function update(){
     const d=H*.4-P.y;P.y=H*.4;maxH+=d;score=maxH/10;
     const hm2=Math.floor(maxH/10);if(!god&&hm2>(SV.bestH||0)){SV.bestH=hm2;bestHDirty=true}
     plats.forEach(p=>p.y+=d);coins.forEach(k=>k.y+=d);topY+=d;
-    parts.forEach(q=>q.y+=d);pops.forEach(q=>q.y+=d);
+    parts.forEach(q=>q.y+=d);pops.forEach(q=>q.y+=d);trailHist.forEach(q=>q.y+=d);
     clouds.forEach(cl=>{cl.y+=d*.3*cl.s;if(cl.y>H+40){cl.y=-40;cl.x=Math.random()*W}});
     genPlats();
   }
@@ -720,7 +792,7 @@ function drawCoin(k){
 function drawBlob(){
   ctx.save();ctx.translate(P.x,P.y+P.r*(1-P.sy));ctx.scale(P.sx,P.sy);
   const sk=ovr||{col:colV(SV.eq.col),hat:SV.eq.hat};
-  ctx.beginPath();ctx.ellipse(0,0,P.r,P.r,0,0,7);outline(sk.col==="rainbow"?`hsl(${t*3%360},85%,62%)`:sk.col);
+  ctx.beginPath();ctx.ellipse(0,0,P.r,P.r,0,0,7);outline(blobFill(sk.col));if(sk.col==="galaxy")galaxyStars();
   ctx.fillStyle="rgba(255,255,255,.35)";ctx.beginPath();ctx.ellipse(-7,-9,6,4,-.5,0,7);ctx.fill();
   const ex=P.face*3,ey=P.vy<0?-3:0;
   [-7,7].forEach(o=>{
@@ -748,6 +820,7 @@ function draw(){
   clouds&&clouds.forEach(cl=>cloud(cl.x,cl.y,cl.s));
   if(plats){plats.forEach(p=>drawPlat(p));coins.forEach(drawCoin)}
   if(MP.active)drawGhosts();
+  if(state==="play"&&SV.eq.trail==="rainbowtail")drawRainbowTrail();
   if(P&&(state!=="over"||P.y<H))drawBlob();
   parts.forEach(q=>{ctx.globalAlpha=Math.max(0,q.l);ctx.fillStyle=q.col;ctx.beginPath();const r=q.r*Math.max(.2,q.l);
     if(q.sh==="star")starPath(q.x,q.y,r*1.4);else if(q.sh==="heart")heartPath(q.x,q.y,r);else ctx.arc(q.x,q.y,r,0,7);
