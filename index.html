@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="game-version" content="15">
 <title>Blobbo Hop</title>
 <style>
 /* Comic Neue Bold (SIL Open Font License 1.1) - eingebettet, damit die Schrift auf jedem Geraet gleich aussieht */
@@ -95,6 +96,20 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 #invDlg .irow .is.on{color:#2e9e2e}
 #invDlg .irow button{font-size:15px;padding:3px 8px;margin:0}
 #invDlg .irow button:disabled{opacity:.5}
+#upd{position:fixed;z-index:99;touch-action:auto;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,33,64,.6)}
+#upd[hidden]{display:none}
+#upd .dlg{background:var(--card);color:var(--txt);border:4px solid var(--ink);border-radius:20px;box-shadow:0 6px 0 var(--ink);padding:16px;width:min(80vw,280px)}
+#upd h3{margin:0 0 8px;font-size:26px;font-weight:400}
+#upd input,#upd button{font:inherit;font-size:18px;border:3px solid var(--ink);border-radius:12px;padding:6px 10px;margin:3px 3px 3px 0;background:#fff;color:#2b2140;width:100%;box-sizing:border-box}
+#upd button{width:auto;cursor:pointer;background:#ffd23f}
+#upd button.blue{background:#5bb8ff}#upd button.red{background:#ff6b8b}
+#upd p{margin:4px 0;min-height:1.2em;color:#ff6b8b}
+#upd input{letter-spacing:3px;text-align:center;font-size:26px}
+#upd{background:rgba(43,33,64,.94)}
+#upd .dlg{text-align:center}
+#upd h3{font-size:30px}
+#upd p{color:var(--txt);min-height:0;font-size:17px;margin:8px 0}
+#upd button{width:100%;padding:10px}
 </style>
 </head>
 <body>
@@ -132,6 +147,12 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 <p id="invErr"></p>
 <button id="invClose" class="red">Schließen</button>
 </div></div>
+<div id="upd" hidden><div class="dlg">
+<h3>Neue Version verfügbar!</h3>
+<p>Setze deine Website zurück, um die neueste Version zu bekommen. Bis dahin ist das Spiel gesperrt.</p>
+<p id="updVer" style="font-size:14px;color:#8a7ba8"></p>
+<button id="updBtn" class="blue">Website zurücksetzen</button>
+</div></div>
 <div id="friendDlg" hidden><div class="dlg">
 <h3>Freund hinzufügen</h3>
 <input id="fdIn" inputmode="numeric" maxlength="10" placeholder="10-stellige ID" autocomplete="off">
@@ -146,13 +167,12 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 </div></div>
 <div id="adm" hidden><div class="box">
 <h2>Admin-Panel</h2>
-<div id="lock"><p id="pinInfo"></p><input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"><button id="pinGo">OK</button></div>
-<div id="tools" hidden>
+
+<div id="tools">
 <p id="stat"></p>
 <button data-c="100">+100</button><button data-c="1000">+1.000</button><button data-c="10000">+10.000</button>
 <div><input id="setN" type="number" min="0" placeholder="Münzen"><button id="setGo" class="blue">Setzen</button></div>
 <div><button id="unlock" class="blue">Alles freischalten</button><button id="god" class="blue">Gott-Modus: aus</button></div>
-<div><input id="newPin" type="password" inputmode="numeric" placeholder="Neuer PIN"><button id="pinSet" class="blue">PIN ändern</button></div>
 <div><button id="restore" class="blue">Cloud-Backup einspielen</button></div>
 <div><button id="wipe" class="red">Fortschritt löschen</button></div>
 </div>
@@ -215,7 +235,8 @@ async function cloudFlush(){
   const F=window.FB;if(!F||!F.user||!cloudReady)return false;
   clearTimeout(cloudT);
   const nm=String(SV.name||"Spieler").slice(0,14)||"Spieler";
-  const data={name:nm,bestH:cn(SV.bestH),total:cn(SV.total),coins:cn(SV.coins),own:SV.own.slice(0,200),eq:SV.eq,best:cn(best),ts:SV.ts||Date.now()};
+  const co=cn(SV.coins),to=isAdminUser()?cn(SV.total):Math.max(cn(SV.total),co);
+  const data={name:nm,bestH:cn(SV.bestH),total:to,coins:co,own:SV.own.slice(0,200),eq:SV.eq,best:cn(best),ts:SV.ts||Date.now()};
   const lb={name:nm,bestH:data.bestH,best:data.best,total:data.total,col:SV.eq.col,hat:SV.eq.hat};
   let ok=false;
   try{
@@ -573,15 +594,17 @@ function burst(x,y,col,n=10,sp=4){
 function pop(x,y,txt,col="#fff"){pops.push({x,y,txt,col,l:1})}
 
 // ---------- Input ----------
-addEventListener("keydown",e=>{if(bindKey){if(e.key!=="Escape"){ST[bindKey]=e.key.toLowerCase();saveST();beep(760,.1,"triangle")}bindKey=null;e.preventDefault();return}if(state==="spectate"&&!admOpen&&!authOpen){if(e.key==="ArrowRight"||e.key==="ArrowLeft"||e.key===" "){specSwitch(e.key==="ArrowLeft"?-1:1);e.preventDefault()}if(e.key==="Escape")specLeave();return}
+addEventListener("keydown",e=>{if(updOpen){e.preventDefault();return}if(bindKey){if(e.key!=="Escape"){ST[bindKey]=e.key.toLowerCase();saveST();beep(760,.1,"triangle")}bindKey=null;e.preventDefault();return}if(state==="spectate"&&!admOpen&&!authOpen){if(e.key==="ArrowRight"||e.key==="ArrowLeft"||e.key===" "){specSwitch(e.key==="ArrowLeft"?-1:1);e.preventDefault()}if(e.key==="Escape")specLeave();return}
   if(INV.list.length&&e.key.toLowerCase()==="g"&&!admOpen&&!authOpen&&!joinOpen&&!friendOpen&&!invOpen&&!(state==="play"&&(ST.kl==="g"||ST.kr==="g"))){acceptInvite();e.preventDefault();return}
-  if(admOpen||authOpen||joinOpen||friendOpen||invOpen)return;seqBuf=(seqBuf+e.key).slice(-4);if(seqBuf==="2911"){seqBuf="";openAdmin();return}keys[e.key.toLowerCase()]=true;if((state==="shop"||state==="settings"||state==="mp"||state==="board"||state==="friends")&&e.key==="Escape")closeShop();if(state==="lobby"&&e.key==="Escape")leaveRoom();if(state==="results"&&e.key==="Escape")state="lobby";if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
+  if(admOpen&&e.key==="Escape"){closeAdmin();return}
+  if(admOpen||authOpen||joinOpen||friendOpen||invOpen)return;
+  if(e.key==="8"){openAdmin();return}keys[e.key.toLowerCase()]=true;if((state==="shop"||state==="settings"||state==="mp"||state==="board"||state==="friends")&&e.key==="Escape")closeShop();if(state==="lobby"&&e.key==="Escape")leaveRoom();if(state==="results"&&e.key==="Escape")state="lobby";if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
 addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 function gx(e){const r=c.getBoundingClientRect();return (e.clientX-r.left)/r.width*W}
 const dirOf=e=>{const r=c.getBoundingClientRect();return e.clientX<r.left+r.width/2?-1:1};
 function gy(e){const r=c.getBoundingClientRect();return (e.clientY-r.top)/r.height*H}
 addEventListener("pointerdown",e=>{
-  if(admOpen||authOpen||joinOpen||friendOpen||invOpen||e.target.closest("#adm,#auth,#joinDlg,#friendDlg,#invDlg"))return;
+  if(updOpen||admOpen||authOpen||joinOpen||friendOpen||invOpen||e.target.closest("#upd,#adm,#auth,#joinDlg,#friendDlg,#invDlg"))return;
   const x=gx(e),y=gy(e);
   if(invClick(x,y))return;
   if(state==="shop"){sd={x,y,sc:shopScroll,m:false};return}
@@ -687,14 +710,14 @@ function update(){
   // camera
   if(P.y<H*.4){
     const d=H*.4-P.y;P.y=H*.4;maxH+=d;score=maxH/10;
-    const hm2=Math.floor(maxH/10);if(!god&&hm2>(SV.bestH||0)){SV.bestH=hm2;bestHDirty=true}
+    const hm2=Math.floor(maxH/10);if(!godOn()&&hm2>(SV.bestH||0)){SV.bestH=hm2;bestHDirty=true}
     plats.forEach(p=>p.y+=d);coins.forEach(k=>k.y+=d);topY+=d;
     parts.forEach(q=>q.y+=d);pops.forEach(q=>q.y+=d);trailHist.forEach(q=>q.y+=d);
     clouds.forEach(cl=>{cl.y+=d*.3*cl.s;if(cl.y>H+40){cl.y=-40;cl.x=Math.random()*W}});
     genPlats();
   }
   plats=plats.filter(p=>p.y<H+60);coins=coins.filter(k=>k.y<H+60&&!k.got);
-  if(P.y>H+40){if(god){P.y=H-60;P.vy=-14;P.sx=1.4;P.sy=.6}else gameOver()}
+  if(P.y>H+40){if(godOn()){P.y=H-60;P.vy=-14;P.sx=1.4;P.sy=.6}else gameOver()}
   if(MP.active&&state==="play")mpTick();
   if(bestHDirty&&t%300===0){bestHDirty=false;save()}
   updFx();
@@ -1321,7 +1344,7 @@ const toast=m=>{MP.msg=m;MP.msgT=160};
 const uid=()=>window.FB.user.uid;
 const mpOK=()=>!!(window.MPB&&window.FB&&window.FB.user);
 function mpWhy(){return !window.MPB?"Multiplayer ist nicht eingerichtet (Realtime Database).":"Bitte erst einloggen (LOG IN)."}
-const VER=14;
+const VER=15;
 let lobbyFlag=null;
 function lobbySync(){
   if(!MP.code||!MP.joined||!window.MPB||!window.FB||!window.FB.user)return;
@@ -1678,43 +1701,29 @@ async function doJoin(){
 $a("joinOk").onclick=doJoin;$a("joinNo").onclick=closeJoin;
 $a("joinIn").onkeydown=e=>{if(e.key==="Enter")doJoin()};
 
-// ---------- Admin-Panel (PIN-geschützt, nur lokal) ----------
+// ---------- Admin-Panel (nur fuer eine Firebase-UID) ----------
+const ADMIN_UID="mlEaMWRdNxYPN6hCJG8ephurBN52";
 let admOpen=false,god=false,tapN=0,tapT=0,seqBuf="";
 const $=id=>document.getElementById(id);
-function hsh(v){let h=5381;for(const ch of v)h=((h<<5)+h+ch.charCodeAt(0))|0;return String(h)}
-function getPin(){try{return localStorage.getItem("blobbo-pin")}catch(e){return null}}
-function setPin(v){try{localStorage.setItem("blobbo-pin",hsh(v));return true}catch(e){return false}}
-let memPin=null;
+const isAdminUser=()=>!!(window.FB&&window.FB.user&&window.FB.user.uid===ADMIN_UID);
+const godOn=()=>god&&isAdminUser();
 function stat(){$("stat").textContent="Münzen: "+SV.coins+"  |  Items: "+SV.own.length}
 function openAdmin(){
-  admOpen=true;$("adm").hidden=false;$("msg2").textContent="";$("pin").value="";
-  const has=(getPin()||memPin)!==null&&(getPin()||memPin)!==undefined;
-  $("tools").hidden=true;$("lock").hidden=false;
-  $("pinInfo").textContent=has?"PIN eingeben":"Wähle einen PIN (mind. 4 Zeichen)";
-  setTimeout(()=>$("pin").focus(),50);
+  if(!isAdminUser())return;
+  admOpen=true;$("adm").hidden=false;$("msg2").textContent="Angemeldet als Admin.";stat();
 }
 function closeAdmin(){admOpen=false;$("adm").hidden=true}
-function tryPin(){
-  const v=$("pin").value;
-  if(v.length<4){$("msg2").textContent="Mindestens 4 Zeichen.";return}
-  const cur=getPin()||memPin;
-  if(!cur){if(!setPin(v))memPin=hsh(v)}
-  else if(cur!==hsh(v)){$("msg2").textContent="Falscher PIN.";beep(200,.2,"sawtooth");return}
-  $("lock").hidden=true;$("tools").hidden=false;$("msg2").textContent="Zugriff erlaubt.";stat();
-}
-$("pinGo").onclick=tryPin;
-$("pin").onkeydown=e=>{if(e.key==="Enter")tryPin()};
 $("admClose").onclick=closeAdmin;
-document.querySelectorAll("#tools [data-c]").forEach(b=>b.onclick=()=>{SV.coins+=+b.dataset.c;save();stat();beep(880,.15,"triangle")});
-$("setGo").onclick=()=>{const n=Math.max(0,Math.floor(+$("setN").value));if(isFinite(n)){SV.coins=n;save();stat();beep(880,.15,"triangle")}};
-$("unlock").onclick=()=>{for(const k in ITEMS)ITEMS[k].forEach(i=>{const key=k+":"+i.id;if(!SV.own.includes(key))SV.own.push(key)});save();stat();$("msg2").textContent="Alle Items freigeschaltet."};
-$("god").onclick=()=>{god=!god;$("god").textContent="Gott-Modus: "+(god?"an":"aus")};
-$("pinSet").onclick=()=>{const v=$("newPin").value;if(v.length<4){$("msg2").textContent="Mindestens 4 Zeichen.";return}if(setPin(v)){memPin=null;$("msg2").textContent="PIN geändert."}else{memPin=hsh(v);$("msg2").textContent="PIN nur für diese Sitzung gesetzt."}$("newPin").value=""};
-$("wipe").onclick=()=>{if(!$("wipe").dataset.s){$("wipe").dataset.s=1;$("wipe").textContent="Sicher? Nochmal tippen";return}
+document.querySelectorAll("#tools [data-c]").forEach(b=>b.onclick=()=>{if(!isAdminUser())return;SV.coins+=+b.dataset.c;save();stat();beep(880,.15,"triangle")});
+$("setGo").onclick=()=>{if(!isAdminUser())return;const n=Math.max(0,Math.floor(+$("setN").value));if(isFinite(n)){SV.coins=n;save();stat();beep(880,.15,"triangle")}};
+$("unlock").onclick=()=>{if(!isAdminUser())return;for(const k in ITEMS)ITEMS[k].forEach(i=>{const key=k+":"+i.id;if(!SV.own.includes(key))SV.own.push(key)});save();stat();$("msg2").textContent="Alle Items freigeschaltet."};
+$("god").onclick=()=>{if(!isAdminUser())return;god=!god;$("god").textContent="Gott-Modus: "+(god?"an":"aus")};
+$("wipe").onclick=()=>{if(!isAdminUser())return;if(!$("wipe").dataset.s){$("wipe").dataset.s=1;$("wipe").textContent="Sicher? Nochmal tippen";return}
   delete $("wipe").dataset.s;$("wipe").textContent="Fortschritt löschen";
   SV={coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}};best=0;
   try{localStorage.removeItem("blobbo-best")}catch(e){}cloudReady=false;clearTimeout(cloudT);saveLocal();stat();$("msg2").textContent="Nur lokal zurückgesetzt. Die Cloud-Daten bleiben erhalten (Seite neu laden stellt sie wieder her)."};
 $("restore").onclick=async()=>{
+  if(!isAdminUser())return;
   const F=window.FB;
   if(!F||!F.user||!F.latestBackup){$("msg2").textContent="Nicht eingeloggt.";return}
   try{
@@ -1725,6 +1734,42 @@ $("restore").onclick=async()=>{
     $("msg2").textContent="Backup vom "+(b.at?new Date(b.at).toLocaleDateString("de-DE"):"?")+" eingespielt."
   }catch(e){$("msg2").textContent="Fehler: "+(e.code||e.message)}
 };
+
+// ---------- Versionspruefung ----------
+let updOpen=false,updLatest=VER,updBusy=false;
+function showUpdate(latest){
+  updLatest=latest;updOpen=true;holdDir=0;ptr=null;sliderDrag=false;
+  $("updVer").textContent="Deine Version: "+VER+"  -  Neueste Version: "+latest;
+  $("upd").hidden=false;
+}
+function hideUpdate(){updOpen=false;$("upd").hidden=true}
+async function checkVersion(){
+  if(updBusy||typeof location==="undefined"||!/^https?:$/.test(location.protocol))return;
+  updBusy=true;
+  try{
+    const res=await fetch(location.href.split("#")[0].split("?")[0]+"?chk="+Date.now(),{cache:"no-store"});
+    if(!res.ok)return;
+    const re=/name="game-version"\s+content="(\d+)"/;let txt="";
+    if(res.body&&res.body.getReader){
+      const rd=res.body.getReader(),dec=new TextDecoder();
+      for(let n=0;n<40;n++){const r=await rd.read();if(r.done)break;txt+=dec.decode(r.value,{stream:true});if(re.test(txt)){rd.cancel().catch(()=>{});break}}
+    }else txt=await res.text();
+    const m=txt.match(re);
+    if(m){const latest=+m[1];if(latest>VER)showUpdate(latest);else if(updOpen)hideUpdate()}
+  }catch(e){}finally{updBusy=false}
+}
+async function resetSite(){
+  $("updBtn").textContent="Wird zurückgesetzt...";
+  try{await Promise.race([cloudFlush(),new Promise(r=>setTimeout(r,3000))])}catch(e){}
+  try{if(typeof caches!=="undefined"){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}}catch(e){}
+  try{if(navigator.serviceWorker){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()))}}catch(e){}
+  location.replace(location.href.split("#")[0].split("?")[0]+"?v="+updLatest+"&t="+Date.now());
+}
+$("updBtn").onclick=resetSite;
+setTimeout(checkVersion,2500);
+setInterval(checkVersion,300000);
+addEventListener("online",checkVersion);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkVersion()});
 
 reset();state="menu";
 const STEP=1000/60;
@@ -1742,7 +1787,8 @@ function loop(now){
   fpsN++;if(now-fpsT>=500){fpsV=Math.round(fpsN*1000/(now-fpsT));fpsN=0;fpsT=now}
   acc+=dt;
   let n=0;
-  while(acc>=STEP-2&&n<6){update();acc-=STEP;n++}
+  if(updOpen)acc=0;
+  while(!updOpen&&acc>=STEP-2&&n<6){update();acc-=STEP;n++}
   if(n>=6)acc=0;
   draw();
   if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="friends")drawFriends();if(state==="results")drawResults();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();
