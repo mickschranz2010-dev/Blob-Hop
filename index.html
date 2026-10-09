@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="game-version" content="15">
+<meta name="game-version" content="16">
 <title>Blobbo Hop</title>
 <style>
 /* Comic Neue Bold (SIL Open Font License 1.1) - eingebettet, damit die Schrift auf jedem Geraet gleich aussieht */
@@ -110,6 +110,15 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 #upd h3{font-size:30px}
 #upd p{color:var(--txt);min-height:0;font-size:17px;margin:8px 0}
 #upd button{width:100%;padding:10px}
+#admSet{position:fixed;z-index:9;touch-action:auto;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,33,64,.6)}
+#admSet[hidden]{display:none}
+#admSet .dlg{background:var(--card);color:var(--txt);border:4px solid var(--ink);border-radius:20px;box-shadow:0 6px 0 var(--ink);padding:16px;width:min(80vw,280px)}
+#admSet h3{margin:0 0 8px;font-size:26px;font-weight:400}
+#admSet input,#admSet button{font:inherit;font-size:18px;border:3px solid var(--ink);border-radius:12px;padding:6px 10px;margin:3px 3px 3px 0;background:#fff;color:#2b2140;width:100%;box-sizing:border-box}
+#admSet button{width:auto;cursor:pointer;background:#ffd23f}
+#admSet button.blue{background:#5bb8ff}#admSet button.red{background:#ff6b8b}
+#admSet p{margin:4px 0;min-height:1.2em;color:#ff6b8b}
+#admSet input{letter-spacing:2px;text-align:center;font-size:26px}
 </style>
 </head>
 <body>
@@ -165,19 +174,11 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 <p id="joinErr"></p>
 <button id="joinOk" class="blue">Beitreten</button><button id="joinNo" class="red">Abbrechen</button>
 </div></div>
-<div id="adm" hidden><div class="box">
-<h2>Admin-Panel</h2>
-
-<div id="tools">
-<p id="stat"></p>
-<button data-c="100">+100</button><button data-c="1000">+1.000</button><button data-c="10000">+10.000</button>
-<div><input id="setN" type="number" min="0" placeholder="Münzen"><button id="setGo" class="blue">Setzen</button></div>
-<div><button id="unlock" class="blue">Alles freischalten</button><button id="god" class="blue">Gott-Modus: aus</button></div>
-<div><button id="restore" class="blue">Cloud-Backup einspielen</button></div>
-<div><button id="wipe" class="red">Fortschritt löschen</button></div>
-</div>
-<p id="msg2"></p>
-<button id="admClose" class="red">Schließen</button>
+<div id="admSet" hidden><div class="dlg">
+<h3>Münzen setzen</h3>
+<input id="setN" type="number" inputmode="numeric" min="0" placeholder="Anzahl">
+<p id="setErr"></p>
+<button id="setOk" class="blue">Setzen</button><button id="setNo" class="red">Abbrechen</button>
 </div></div>
 <script>
 (()=>{
@@ -596,7 +597,8 @@ function pop(x,y,txt,col="#fff"){pops.push({x,y,txt,col,l:1})}
 // ---------- Input ----------
 addEventListener("keydown",e=>{if(updOpen){e.preventDefault();return}if(bindKey){if(e.key!=="Escape"){ST[bindKey]=e.key.toLowerCase();saveST();beep(760,.1,"triangle")}bindKey=null;e.preventDefault();return}if(state==="spectate"&&!admOpen&&!authOpen){if(e.key==="ArrowRight"||e.key==="ArrowLeft"||e.key===" "){specSwitch(e.key==="ArrowLeft"?-1:1);e.preventDefault()}if(e.key==="Escape")specLeave();return}
   if(INV.list.length&&e.key.toLowerCase()==="g"&&!admOpen&&!authOpen&&!joinOpen&&!friendOpen&&!invOpen&&!(state==="play"&&(ST.kl==="g"||ST.kr==="g"))){acceptInvite();e.preventDefault();return}
-  if(admOpen&&e.key==="Escape"){closeAdmin();return}
+  if(state==="admin"&&!admOpen){if(e.key==="Escape")closeAdmin();return}
+  if(admOpen&&e.key==="Escape"){closeAdminDlg();return}
   if(admOpen||authOpen||joinOpen||friendOpen||invOpen)return;
   if(e.key==="8"){openAdmin();return}keys[e.key.toLowerCase()]=true;if((state==="shop"||state==="settings"||state==="mp"||state==="board"||state==="friends")&&e.key==="Escape")closeShop();if(state==="lobby"&&e.key==="Escape")leaveRoom();if(state==="results"&&e.key==="Escape")state="lobby";if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
 addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
@@ -604,7 +606,7 @@ function gx(e){const r=c.getBoundingClientRect();return (e.clientX-r.left)/r.wid
 const dirOf=e=>{const r=c.getBoundingClientRect();return e.clientX<r.left+r.width/2?-1:1};
 function gy(e){const r=c.getBoundingClientRect();return (e.clientY-r.top)/r.height*H}
 addEventListener("pointerdown",e=>{
-  if(updOpen||admOpen||authOpen||joinOpen||friendOpen||invOpen||e.target.closest("#upd,#adm,#auth,#joinDlg,#friendDlg,#invDlg"))return;
+  if(updOpen||admOpen||authOpen||joinOpen||friendOpen||invOpen||e.target.closest("#upd,#admSet,#auth,#joinDlg,#friendDlg,#invDlg"))return;
   const x=gx(e),y=gy(e);
   if(invClick(x,y))return;
   if(state==="shop"){sd={x,y,sc:shopScroll,m:false};return}
@@ -614,6 +616,7 @@ addEventListener("pointerdown",e=>{
   if(state==="friends"){sd={x,y,sc:FR.scroll,m:false,f:true};return}
   if(state==="lobby"){lobbyClick(x,y);return}
   if(state==="results"){resultsClick(x,y);return}
+  if(state==="admin"){adminClick(x,y);return}
   if(state==="spectate"){specClick(x,y);return}
   if((state==="menu"||state==="over")&&hit(x,y,SB)){state="shop";beep(500,.08,"triangle");return}
   if(state==="menu"&&hit(x,y,LB)){openBoard();return}
@@ -638,7 +641,7 @@ addEventListener("wheel",e=>{if(state==="shop")shopScroll+=e.deltaY;if(state==="
 addEventListener("blur",()=>{ptr=null;holdDir=0});
 addEventListener("pointerup",upF);addEventListener("pointercancel",upF);
 function start(){
-  if(state==="play"||state==="shop"||state==="settings"||state==="mp"||state==="lobby"||state==="board"||state==="spectate"||state==="friends"||state==="results")return;
+  if(state==="play"||state==="shop"||state==="settings"||state==="mp"||state==="lobby"||state==="board"||state==="spectate"||state==="friends"||state==="results"||state==="admin")return;
   if(state==="over"&&t-overAt<40)return;
   reset();state="play";beep(520,.15,"triangle",.08,300);
 }
@@ -1344,7 +1347,7 @@ const toast=m=>{MP.msg=m;MP.msgT=160};
 const uid=()=>window.FB.user.uid;
 const mpOK=()=>!!(window.MPB&&window.FB&&window.FB.user);
 function mpWhy(){return !window.MPB?"Multiplayer ist nicht eingerichtet (Realtime Database).":"Bitte erst einloggen (LOG IN)."}
-const VER=15;
+const VER=16;
 let lobbyFlag=null;
 function lobbySync(){
   if(!MP.code||!MP.joined||!window.MPB||!window.FB||!window.FB.user)return;
@@ -1703,37 +1706,97 @@ $a("joinIn").onkeydown=e=>{if(e.key==="Enter")doJoin()};
 
 // ---------- Admin-Panel (nur fuer eine Firebase-UID) ----------
 const ADMIN_UID="mlEaMWRdNxYPN6hCJG8ephurBN52";
-let admOpen=false,god=false,tapN=0,tapT=0,seqBuf="";
+let admOpen=false,god=false,tapN=0,tapT=0,seqBuf="",admPrev="menu";
 const $=id=>document.getElementById(id);
 const isAdminUser=()=>!!(window.FB&&window.FB.user&&window.FB.user.uid===ADMIN_UID);
 const godOn=()=>god&&isAdminUser();
-function stat(){$("stat").textContent="Münzen: "+SV.coins+"  |  Items: "+SV.own.length}
+const AD={msg:"",msgT:0,wipeArm:false,wipeT:0};
+const adToast=m=>{AD.msg=m;AD.msgT=150};
+const fmt=n=>Math.floor(n).toLocaleString("de-DE");
 function openAdmin(){
-  if(!isAdminUser())return;
-  admOpen=true;$("adm").hidden=false;$("msg2").textContent="Angemeldet als Admin.";stat();
+  if(!isAdminUser()||state==="admin")return;
+  admPrev=state;state="admin";holdDir=0;ptr=null;AD.msgT=0;AD.wipeArm=false;beep(500,.08,"triangle");
 }
-function closeAdmin(){admOpen=false;$("adm").hidden=true}
-$("admClose").onclick=closeAdmin;
-document.querySelectorAll("#tools [data-c]").forEach(b=>b.onclick=()=>{if(!isAdminUser())return;SV.coins+=+b.dataset.c;save();stat();beep(880,.15,"triangle")});
-$("setGo").onclick=()=>{if(!isAdminUser())return;const n=Math.max(0,Math.floor(+$("setN").value));if(isFinite(n)){SV.coins=n;save();stat();beep(880,.15,"triangle")}};
-$("unlock").onclick=()=>{if(!isAdminUser())return;for(const k in ITEMS)ITEMS[k].forEach(i=>{const key=k+":"+i.id;if(!SV.own.includes(key))SV.own.push(key)});save();stat();$("msg2").textContent="Alle Items freigeschaltet."};
-$("god").onclick=()=>{if(!isAdminUser())return;god=!god;$("god").textContent="Gott-Modus: "+(god?"an":"aus")};
-$("wipe").onclick=()=>{if(!isAdminUser())return;if(!$("wipe").dataset.s){$("wipe").dataset.s=1;$("wipe").textContent="Sicher? Nochmal tippen";return}
-  delete $("wipe").dataset.s;$("wipe").textContent="Fortschritt löschen";
-  SV={coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}};best=0;
-  try{localStorage.removeItem("blobbo-best")}catch(e){}cloudReady=false;clearTimeout(cloudT);saveLocal();stat();$("msg2").textContent="Nur lokal zurückgesetzt. Die Cloud-Daten bleiben erhalten (Seite neu laden stellt sie wieder her)."};
-$("restore").onclick=async()=>{
+function closeAdmin(){state=(admPrev&&admPrev!=="admin")?admPrev:"menu";AD.wipeArm=false;holdDir=0;ptr=null;beep(500,.08,"triangle")}
+function openAdminDlg(){admOpen=true;$("admSet").hidden=false;$("setErr").textContent="";$("setN").value=SV.coins;setTimeout(()=>{$("setN").focus();$("setN").select()},50)}
+function closeAdminDlg(){admOpen=false;$("admSet").hidden=true}
+function doSetCoins(){
+  if(!isAdminUser())return;
+  const n=Math.floor(+$("setN").value);
+  if(!isFinite(n)||n<0||n>1e9){$("setErr").textContent="Bitte eine Zahl von 0 bis 1.000.000.000.";return}
+  SV.coins=n;save();closeAdminDlg();adToast("Münzen auf "+fmt(n)+" gesetzt");beep(880,.15,"triangle");
+}
+$("setOk").onclick=doSetCoins;$("setNo").onclick=closeAdminDlg;
+$("setN").onkeydown=e=>{if(e.key==="Enter")doSetCoins()};
+function adGive(n){if(!isAdminUser())return;SV.coins+=n;save();adToast("+"+fmt(n)+" Münzen");beep(880,.15,"triangle")}
+function adUnlock(){
+  if(!isAdminUser())return;
+  for(const k in ITEMS)ITEMS[k].forEach(i=>{const key=k+":"+i.id;if(!SV.own.includes(key))SV.own.push(key)});
+  save();adToast("Alle Items freigeschaltet");beep(880,.15,"triangle");
+}
+function adGod(){if(!isAdminUser())return;god=!god;adToast("Gott-Modus "+(god?"an":"aus"));beep(640,.08,"triangle")}
+async function adRestore(){
   if(!isAdminUser())return;
   const F=window.FB;
-  if(!F||!F.user||!F.latestBackup){$("msg2").textContent="Nicht eingeloggt.";return}
+  if(!F||!F.user||!F.latestBackup){adToast("Nicht eingeloggt.");return}
   try{
     const b=await F.latestBackup();
-    if(!b){$("msg2").textContent="Kein Backup gefunden.";return}
+    if(!b){adToast("Kein Backup gefunden.");return}
     SV={uid:F.user.uid,ts:Date.now(),name:b.name||SV.name,bestH:Math.max(cn(SV.bestH),cn(b.bestH)),total:Math.max(cn(SV.total),cn(b.total)),coins:cn(b.coins),own:[...new Set([...SV.own,...(Array.isArray(b.own)?b.own:[])])],eq:b.eq||SV.eq};
-    best=Math.max(best,cn(b.best));cloudReady=true;save();stat();
-    $("msg2").textContent="Backup vom "+(b.at?new Date(b.at).toLocaleDateString("de-DE"):"?")+" eingespielt."
-  }catch(e){$("msg2").textContent="Fehler: "+(e.code||e.message)}
+    best=Math.max(best,cn(b.best));cloudReady=true;save();
+    adToast("Backup vom "+(b.at?new Date(b.at).toLocaleDateString("de-DE"):"?")+" eingespielt");beep(880,.15,"triangle");
+  }catch(e){adToast("Fehler: "+(e.code||e.message))}
+}
+function adWipe(){
+  if(!isAdminUser())return;
+  if(!AD.wipeArm){AD.wipeArm=true;AD.wipeT=t;adToast("Nochmal tippen zum Löschen!");beep(300,.12,"sawtooth");return}
+  AD.wipeArm=false;
+  SV=DEF();best=0;try{localStorage.removeItem("blobbo-best")}catch(e){}
+  cloudReady=false;clearTimeout(cloudT);saveLocal();
+  adToast("Nur lokal zurückgesetzt. Cloud bleibt (Neuladen stellt sie her).");
+}
+const ADR={
+  give:[{x:20,w:110,n:100,c:"#ffd23f"},{x:145,w:110,n:1000,c:"#ffa94d"},{x:270,w:110,n:10000,c:"#ff7eb6"}],
+  setN:{x:20,y:214,w:360,h:40},god:{x:20,y:268,w:360,h:48},
+  unlock:{x:20,y:332,w:360,h:44},restore:{x:20,y:390,w:360,h:44},wipe:{x:20,y:448,w:360,h:44},
+  back:{x:120,y:584,w:160,h:40}
 };
+function adminClick(x,y){
+  if(!isAdminUser()){closeAdmin();return}
+  if(hit(x,y,ADR.back)){closeAdmin();return}
+  ADR.give.forEach(g=>{if(hit(x,y,{x:g.x,y:160,w:g.w,h:40}))adGive(g.n)});
+  if(hit(x,y,ADR.setN)){openAdminDlg();return}
+  if(hit(x,y,ADR.god)){adGod();return}
+  if(hit(x,y,ADR.unlock)){adUnlock();return}
+  if(hit(x,y,ADR.restore)){adRestore();return}
+  if(hit(x,y,ADR.wipe)){adWipe();return}
+}
+function drawAdmin(){
+  if(!isAdminUser()){closeAdmin();return}
+  if(AD.wipeArm&&t-AD.wipeT>180)AD.wipeArm=false;
+  ctx.fillStyle="#bdeaff";ctx.fillRect(0,0,W,H);
+  cloud((t*.2)%520-100,170,.9);cloud((t*.13+240)%520-100,420,1);
+  shad(60,10,280,56,18);rr(60,10,280,56,18);outline("#ff6b8b");text("ADMIN",W/2,46,32);text("Nur für dich",W/2,60,12,"#fff");
+  // Kennzahlen
+  [[20,"Münzen",fmt(SV.coins)],[205,"Items",String(SV.own.length)]].forEach(([x,l,v],i)=>{
+    shad(x,80,175,52,14);rr(x,80,175,52,14);outline("#fffdf2");
+    ctx.beginPath();if(i===0)ctx.arc(x+26,106,12,0,7);else starPath(x+26,106,13);outline("#ffd23f");
+    text(l,x+48,98,12,"#fff","left");text(v,x+48,122,21,"#ffd23f","left");
+  });
+  text("MÜNZEN GEBEN",W/2,152,13,"#fff");
+  ADR.give.forEach(g=>btn3d(g.x,160,g.w,40,"+"+fmt(g.n),g.c,18));
+  btn3d(ADR.setN.x,ADR.setN.y,ADR.setN.w,ADR.setN.h,"MÜNZEN SETZEN","#5bb8ff",20);
+  // Gott-Modus als Schalter wie in den Settings
+  const r=ADR.god,on=godOn();
+  shad(r.x,r.y,r.w,r.h,14);rr(r.x,r.y,r.w,r.h,14);outline("#fffdf2");
+  text("Gott-Modus",40,r.y+31,22,"#fff","left");
+  rr(290,r.y+8,76,32,16);outline(on?"#6bd96b":"#c8c0d8");ctx.beginPath();ctx.arc(on?350:306,r.y+24,12,0,7);outline("#fff");
+  btn3d(ADR.unlock.x,ADR.unlock.y,ADR.unlock.w,ADR.unlock.h,"ALLES FREISCHALTEN","#6bd96b",20);
+  btn3d(ADR.restore.x,ADR.restore.y,ADR.restore.w,ADR.restore.h,"CLOUD-BACKUP EINSPIELEN","#4dabff",19);
+  btn3d(ADR.wipe.x,ADR.wipe.y,ADR.wipe.w,ADR.wipe.h,AD.wipeArm?"SICHER? NOCHMAL TIPPEN!":"FORTSCHRITT LÖSCHEN",AD.wipeArm?(t%20<10?"#ff3b3b":"#ff8a8a"):"#ff6b8b",19);
+  if(AD.msgT>0){AD.msgT-=frameDt;rr(30,508,340,34,17);outline("#fffdf2");text(AD.msg,W/2,531,15,"#ff6b8b")}
+  btn3d(ADR.back.x,ADR.back.y,ADR.back.w,ADR.back.h,"Zurück","#a77bff",22);
+}
 
 // ---------- Versionspruefung ----------
 let updOpen=false,updLatest=VER,updBusy=false;
@@ -1791,7 +1854,7 @@ function loop(now){
   while(!updOpen&&acc>=STEP-2&&n<6){update();acc-=STEP;n++}
   if(n>=6)acc=0;
   draw();
-  if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="friends")drawFriends();if(state==="results")drawResults();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();
+  if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="friends")drawFriends();if(state==="results")drawResults();if(state==="admin")drawAdmin();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();
   drawInvite();
   lobbySync();
   if(ST.fps)text(fpsV+" FPS",W-8,H-8,12,"#fff","right");
