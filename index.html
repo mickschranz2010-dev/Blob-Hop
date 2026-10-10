@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="game-version" content="16">
+<meta name="game-version" content="17">
 <title>Blobbo Hop</title>
 <style>
 /* Comic Neue Bold (SIL Open Font License 1.1) - eingebettet, damit die Schrift auf jedem Geraet gleich aussieht */
@@ -119,6 +119,14 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 #admSet button.blue{background:#5bb8ff}#admSet button.red{background:#ff6b8b}
 #admSet p{margin:4px 0;min-height:1.2em;color:#ff6b8b}
 #admSet input{letter-spacing:2px;text-align:center;font-size:26px}
+#admSet .dlg{width:min(92vw,360px)}
+#plList{max-height:28vh;overflow:auto;margin:6px 0;touch-action:pan-y;-webkit-overflow-scrolling:touch;text-align:left;color:#2b2140}
+#admSet .irow{display:flex;align-items:center;gap:6px;border:3px solid var(--ink);border-radius:12px;padding:5px 8px;margin:5px 0;background:#fff;color:#2b2140;cursor:pointer}
+#admSet .irow.sel{background:#d7ffd0}
+#admSet .irow .in{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:17px}
+#admSet .irow .is{font-size:14px;color:#b8860b}
+#admSet p{min-height:1.2em}
+#admSet #plSel{color:var(--txt);font-size:15px}
 </style>
 </head>
 <body>
@@ -176,7 +184,10 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 </div></div>
 <div id="admSet" hidden><div class="dlg">
 <h3>Münzen setzen</h3>
-<input id="setN" type="number" inputmode="numeric" min="0" placeholder="Anzahl">
+<input id="plSearch" placeholder="Spieler suchen..." autocomplete="off">
+<div id="plList"></div>
+<p id="plSel"></p>
+<input id="setN" type="number" inputmode="numeric" min="0" placeholder="Neue Münzen-Anzahl">
 <p id="setErr"></p>
 <button id="setOk" class="blue">Setzen</button><button id="setNo" class="red">Abbrechen</button>
 </div></div>
@@ -1111,6 +1122,12 @@ function ago(ms){
 const fidFmt=f=>f?String(f).replace(/^(\d{3})(\d{3})(\d{4})$/,"$1 $2 $3"):"...";
 const friendList=()=>FR.ids.slice().sort((a,b)=>(isOn(b)-isOn(a))||String((FR.prof[a]||{}).name||"").localeCompare(String((FR.prof[b]||{}).name||"")));
 const reqList=()=>FR.reqs.slice().sort((a,b)=>(b.at||0)-(a.at||0));
+function onRemotePlayer(d){
+  if(!d||!cloudReady)return;
+  if((+d.ts||0)>(+SV.ts||0)+1&&cn(d.coins)!==cn(SV.coins)){
+    SV.coins=cn(d.coins);saveLocal();invToast("Deine Münzen wurden geändert: "+fmt(SV.coins));beep(880,.15,"triangle");
+  }
+}
 async function syncFriends(){
   const F=window.FB;if(!F||!F.user)return;
   FR.ids.forEach(id=>{if(!FR.presU[id]&&window.PRES)FR.presU[id]=window.PRES.watch(id,v=>{FR.pres[id]=v||null})});
@@ -1140,6 +1157,7 @@ async function startSocial(){
   startInvites(u.uid);
   FR.unsubs.push(F.watchRequests(u.uid,l=>{FR.reqs=l;loadReqProfiles()},eb));
   FR.unsubs.push(F.watchFriends(u.uid,ids=>{FR.ids=ids;syncFriends()},eb));
+  if(F.watchPlayer)FR.unsubs.push(F.watchPlayer(u.uid,onRemotePlayer,eb));
   refreshAuth();
 }
 setInterval(()=>{if(state==="friends")syncFriends()},60000);
@@ -1347,7 +1365,7 @@ const toast=m=>{MP.msg=m;MP.msgT=160};
 const uid=()=>window.FB.user.uid;
 const mpOK=()=>!!(window.MPB&&window.FB&&window.FB.user);
 function mpWhy(){return !window.MPB?"Multiplayer ist nicht eingerichtet (Realtime Database).":"Bitte erst einloggen (LOG IN)."}
-const VER=16;
+const VER=17;
 let lobbyFlag=null;
 function lobbySync(){
   if(!MP.code||!MP.joined||!window.MPB||!window.FB||!window.FB.user)return;
@@ -1718,16 +1736,57 @@ function openAdmin(){
   admPrev=state;state="admin";holdDir=0;ptr=null;AD.msgT=0;AD.wipeArm=false;beep(500,.08,"triangle");
 }
 function closeAdmin(){state=(admPrev&&admPrev!=="admin")?admPrev:"menu";AD.wipeArm=false;holdDir=0;ptr=null;beep(500,.08,"triangle")}
-function openAdminDlg(){admOpen=true;$("admSet").hidden=false;$("setErr").textContent="";$("setN").value=SV.coins;setTimeout(()=>{$("setN").focus();$("setN").select()},50)}
+const PL={list:[],sel:null,loading:false};
+function myUid(){return window.FB&&window.FB.user?window.FB.user.uid:null}
+function plSelText(){
+  const p=PL.list.find(x=>x.id===PL.sel);
+  $("plSel").textContent=p?"Ausgewählt: "+p.name+(p.id===myUid()?" (du)":"")+" - "+fmt(p.coins)+" Münzen":"Wähle einen Spieler aus der Liste.";
+}
+function plRender(){
+  const box=$("plList"),q=$("plSearch").value.trim().toLowerCase();
+  box.innerHTML="";
+  const arr=PL.list.filter(p=>!q||String(p.name).toLowerCase().includes(q)||p.id.toLowerCase().startsWith(q));
+  if(!arr.length){box.textContent=PL.loading?"Lade Spieler...":"Keine Spieler gefunden.";return}
+  arr.forEach(p=>{
+    const row=document.createElement("div");row.className="irow"+(PL.sel===p.id?" sel":"");
+    const nm=document.createElement("span");nm.className="in";nm.textContent=p.name+(p.id===myUid()?" (du)":"");
+    const co=document.createElement("span");co.className="is";co.textContent=fmt(p.coins)+" Münzen";
+    row.onclick=()=>{PL.sel=p.id;$("setN").value=p.coins;plSelText();plRender()};
+    row.appendChild(nm);row.appendChild(co);box.appendChild(row);
+  });
+}
+async function plLoad(){
+  const F=window.FB;
+  PL.loading=true;plRender();
+  try{
+    if(!F||!F.listPlayers)throw {message:"nicht verfügbar"};
+    PL.list=(await F.listPlayers()).sort((a,b)=>String(a.name).localeCompare(String(b.name),"de"));
+    const me=PL.list.find(x=>x.id===myUid());if(me)me.coins=SV.coins;
+  }catch(e){console.error(e);$("setErr").textContent="Fehler: "+(e.code||e.message)}
+  PL.loading=false;plSelText();plRender();
+}
+function openAdminDlg(){
+  admOpen=true;$("admSet").hidden=false;$("setErr").textContent="";$("plSearch").value="";
+  PL.sel=myUid();$("setN").value=SV.coins;plSelText();plLoad();
+  setTimeout(()=>$("plSearch").focus(),50);
+}
 function closeAdminDlg(){admOpen=false;$("admSet").hidden=true}
-function doSetCoins(){
+async function doSetCoins(){
   if(!isAdminUser())return;
   const n=Math.floor(+$("setN").value);
+  if(!PL.sel){$("setErr").textContent="Wähle zuerst einen Spieler aus.";return}
   if(!isFinite(n)||n<0||n>1e9){$("setErr").textContent="Bitte eine Zahl von 0 bis 1.000.000.000.";return}
-  SV.coins=n;save();closeAdminDlg();adToast("Münzen auf "+fmt(n)+" gesetzt");beep(880,.15,"triangle");
+  const p=PL.list.find(x=>x.id===PL.sel),isMe=PL.sel===myUid();
+  try{
+    if(isMe){SV.coins=n;save()}
+    else await window.FB.adminSetCoins(PL.sel,n);
+    if(p)p.coins=n;
+    closeAdminDlg();adToast((p?p.name:"Spieler")+": "+fmt(n)+" Münzen");beep(880,.15,"triangle");
+  }catch(e){console.error(e);$("setErr").textContent="Fehler: "+(e.code||e.message)}
 }
 $("setOk").onclick=doSetCoins;$("setNo").onclick=closeAdminDlg;
 $("setN").onkeydown=e=>{if(e.key==="Enter")doSetCoins()};
+$("plSearch").oninput=plRender;
 function adGive(n){if(!isAdminUser())return;SV.coins+=n;save();adToast("+"+fmt(n)+" Münzen");beep(880,.15,"triangle")}
 function adUnlock(){
   if(!isAdminUser())return;
@@ -1867,7 +1926,7 @@ requestAnimationFrame(loop);
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {getDatabase,ref,set,update,remove,onValue,get,onDisconnect,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import {getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,doc,getDoc,getDocFromServer,setDoc,collection,query,orderBy,limit,getDocs,getDocsFromServer,onSnapshot,where,writeBatch,deleteDoc,documentId} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,doc,getDoc,getDocFromServer,setDoc,collection,query,orderBy,limit,getDocs,getDocsFromServer,onSnapshot,where,writeBatch,deleteDoc,updateDoc,documentId} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 function makeDb(a){try{return initializeFirestore(a,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})})}catch(e){return getFirestore(a)}}
 // >>> HIER DEINE FIREBASE-DATEN EINTRAGEN (Schritt 2 der Anleitung) <<<
@@ -1893,6 +1952,9 @@ if(firebaseConfig.apiKey){
     backup:async d=>{const r=doc(db,"players",auth.currentUser.uid,"backups",new Date().toISOString().slice(0,10));const sn=await getDoc(r);if(!sn.exists())await setDoc(r,{...d,at:Date.now()})},
     latestBackup:async()=>{const sn=await getDocs(query(collection(db,"players",auth.currentUser.uid,"backups"),orderBy("at","desc"),limit(1)));return sn.empty?null:sn.docs[0].data()},
     resetPw:e=>sendPasswordResetEmail(auth,e),
+    listPlayers:async()=>{const sn=await getDocsFromServer(query(collection(db,"players"),limit(500)));return sn.docs.map(d=>{const x=d.data();return{id:d.id,name:x.name||"?",coins:+x.coins||0,total:+x.total||0}})},
+    adminSetCoins:(uid,n)=>updateDoc(doc(db,"players",uid),{coins:n,ts:Date.now()}),
+    watchPlayer:(uid,cb,eb)=>onSnapshot(doc(db,"players",uid),sn=>cb(sn.metadata.hasPendingWrites?null:sn.data()),eb),
     ensureProfile:async(name,col,hat)=>{
       const uid=auth.currentUser.uid,pr=doc(db,"profiles",uid),sn=await getDocFromServer(pr);
       if(sn.exists()){const d=sn.data();if(d.name!==name||d.col!==col||d.hat!==hat)await setDoc(pr,{fid:d.fid,name,col,hat});return d.fid}
