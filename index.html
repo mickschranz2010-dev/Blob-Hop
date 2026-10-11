@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="game-version" content="18">
+<meta name="game-version" content="19">
 <title>Blobbo Hop</title>
 <style>
 /* Comic Neue Bold (SIL Open Font License 1.1) - eingebettet, damit die Schrift auf jedem Geraet gleich aussieht */
@@ -127,19 +127,23 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 #admSet .irow .is{font-size:14px;color:#b8860b}
 #admSet p{min-height:1.2em}
 #admSet #plSel{color:var(--txt);font-size:15px}
-#auth .walbox{position:relative;overflow:hidden;border-radius:18px;padding:6px;margin-bottom:4px}
+#auth .walbox{position:relative;overflow:hidden;border-radius:18px;padding:6px 6px 0;margin-bottom:4px}
 #auth .walbox .idc{position:relative;z-index:2;margin-bottom:0}
-#auth .wbk,#auth .wfr{display:none;pointer-events:none}
-#auth .walbox.go .wbk,#auth .walbox.go .wfr{display:block;position:absolute}
-#auth .wbk{left:3%;right:3%;bottom:0;height:62%;background:#8d5a2b;border:4px solid var(--ink);border-radius:18px;z-index:1}
-#auth .wfr{left:0;right:0;bottom:0;height:47%;background:#c98a4a;border:4px solid var(--ink);border-radius:20px 20px 18px 18px;z-index:3}
-#auth .wfr::before{content:"";position:absolute;inset:7px;border:2px dashed #f3cc92;border-radius:14px}
-#auth .wfr::after{content:"";position:absolute;left:50%;top:-6px;width:26px;height:26px;margin-left:-13px;border-radius:50%;background:#ffd23f;border:4px solid var(--ink)}
-@keyframes cardOut{0%{transform:translateY(74%) rotate(-5deg) scale(.88)}68%{transform:translateY(0) rotate(1.8deg) scale(1.02)}100%{transform:translateY(0) rotate(0) scale(1)}}
-@keyframes walOut{to{transform:translateY(45%);opacity:0}}
+#auth .wal{height:70px}
+#auth .wbk,#auth .wfr{position:absolute;pointer-events:none}
+#auth .wbk{left:3%;right:3%;bottom:0;height:62px;background:#8d5a2b;border:4px solid var(--ink);border-bottom:0;border-radius:20px 20px 0 0;z-index:1}
+#auth .wfr{left:0;right:0;bottom:0;height:46px;background:#c98a4a;border:4px solid var(--ink);border-bottom:0;border-radius:20px 20px 0 0;z-index:3}
+#auth .wfr::before{content:"";position:absolute;inset:7px 8px 0;border:2px dashed #f3cc92;border-bottom:0;border-radius:14px 14px 0 0}
+#auth .wfr::after{content:"";position:absolute;left:50%;top:-12px;width:26px;height:26px;margin-left:-13px;border-radius:50%;background:#ffd23f;border:4px solid var(--ink)}
+@keyframes cardOut{0%{transform:translateY(calc(100% + 34px)) rotate(-4deg) scale(.9)}70%{transform:translateY(-2%) rotate(1.8deg) scale(1.02)}100%{transform:translateY(0) rotate(0) scale(1)}}
 #auth .walbox.go .idc{animation:cardOut .85s cubic-bezier(.25,.8,.3,1) both}
-#auth .walbox.go .wbk,#auth .walbox.go .wfr{animation:walOut .4s .8s ease-in both}
-@media (prefers-reduced-motion:reduce){#auth .walbox.go .idc,#auth .walbox.go .wbk,#auth .walbox.go .wfr{animation:none}#auth .walbox.go .wbk,#auth .walbox.go .wfr{display:none}}
+@media (prefers-reduced-motion:reduce){#auth .walbox.go .idc{animation:none}}
+#accBar{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:10;display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+#accBar[hidden]{display:none}
+#accBar button{font:inherit;font-size:18px;border:3px solid var(--ink);border-radius:12px;padding:6px 12px;margin:0;color:#2b2140;cursor:pointer;background:#ffd23f}
+#accBar button.blue{background:#5bb8ff}#accBar button.red{background:#ff6b8b}
+#accBar p{margin:2px 0 0;font-size:13px;color:#fff;text-shadow:2px 0 var(--ink),-2px 0 var(--ink),0 2px var(--ink),0 -2px var(--ink);min-height:0}
+#auth,#nameDlg,#joinDlg,#friendDlg,#invDlg,#admSet{background:transparent}
 #auth .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:4px 0 8px}
 #auth .tiles div{background:var(--card);border:3px solid var(--ink);border-radius:12px;padding:4px 3px;text-align:center;overflow:hidden;min-width:0}
 #auth .tiles b{display:block;font-size:16px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt)}
@@ -152,7 +156,7 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
 <h2>Account</h2>
 <div id="aOut"><input id="aName" maxlength="14" autocomplete="nickname" placeholder="Spielername (zum Registrieren)"><input id="aMail" type="email" autocomplete="email" placeholder="E-Mail"><input id="aPw" type="password" autocomplete="current-password" placeholder="Passwort (min. 6 Zeichen)"><button id="aLogin" class="blue">Einloggen</button><button id="aReg">Registrieren</button><button id="aForgot">Passwort vergessen?</button></div>
 <div id="aIn" hidden>
-<div class="walbox" id="walbox"><div class="wbk"></div><div class="idc">
+<div class="walbox" id="walbox"><div class="idc">
  <div class="idh"><span>BLOBBO-AUSWEIS</span><span>★</span></div>
  <div class="idb">
   <canvas id="avatar" width="120" height="120"></canvas>
@@ -164,11 +168,11 @@ canvas{border:5px solid #1a1030;border-radius:22px;box-shadow:0 8px 0 #1a1030;ba
  </div>
  <div class="stats"><div><b id="stCoins">0</b><span>Münzen</span></div><div><b id="stTotal">0</b><span>Gesamt</span></div><div><b id="stBest">0</b><span>Highscore</span></div></div>
  <div class="idf"><span>FREUNDE-ID <span id="idNo"></span></span><div class="bar"></div></div>
-</div><div class="wfr"></div></div>
-<div class="tiles" id="tiles"></div>
-<button id="aSave" class="blue">Jetzt speichern</button><button id="aLogout" class="red">Ausloggen</button><p id="cloudSt" style="font-size:14px"></p></div>
+</div><div class="wal"></div><div class="wbk"></div><div class="wfr"></div></div>
+<div class="tiles" id="tiles"></div></div>
 <p id="aMsg"></p><button id="aClose" class="red">Schließen</button>
 </div>
+<div id="accBar" hidden><button id="aSave" class="blue">Jetzt speichern</button><button id="aLogout" class="red">Ausloggen</button><p id="cloudSt"></p></div>
 <div id="nameDlg" hidden><div class="dlg">
 <h3>Neuer Name</h3>
 <input id="nameIn" maxlength="14" placeholder="Dein Name">
@@ -968,6 +972,7 @@ function renderTiles(){
 }
 function refreshAuth(){
   const u=window.FB&&window.FB.user;
+  {const ab=document.getElementById("accBar");if(ab)ab.hidden=!u}
   if(u&&wantWallet&&authOpen){wantWallet=false;setTimeout(playWallet,30)}$a("aOut").hidden=!!u;$a("aIn").hidden=!u;
   if(!u)return;
   $a("nameTxt").textContent=SV.name||"Spieler";$a("aMail2").textContent=u.email;
@@ -977,7 +982,7 @@ function refreshAuth(){
 function startEdit(){$a("nameErr").textContent="";$a("nameDlg").hidden=false;$a("nameIn").value=SV.name||"";setTimeout(()=>{$a("nameIn").focus();$a("nameIn").select()},50)}
 function refreshStatus(){const el=document.getElementById("cloudSt");if(!el)return;const c=cloudSt||"";el.textContent=c.startsWith("ok:")?"Cloud: gespeichert ("+c.slice(3)+")":c==="wait"?"Cloud: wartet auf Verbindung (lokal gesichert)":c.startsWith("err:")?"Cloud-Fehler: "+c.slice(4):""}
 function openAuth(){refreshStatus();authOpen=true;$a("nameDlg").hidden=true;$a("auth").hidden=false;$a("aMsg").textContent=window.FB?"":"Online-Funktionen nicht verfügbar (Firebase nicht eingerichtet oder offline).";wantWallet=false;refreshAuth();if(window.FB&&window.FB.user)playWallet()}
-$a("aClose").onclick=()=>{authOpen=false;$a("auth").hidden=true};
+$a("aClose").onclick=()=>{authOpen=false;$a("auth").hidden=true;const ab=document.getElementById("accBar");if(ab)ab.hidden=true};
 function fbErr(e){const m={"auth/invalid-email":"Ungültige E-Mail.","auth/invalid-credential":"E-Mail oder Passwort falsch.","auth/email-already-in-use":"E-Mail ist schon registriert.","auth/weak-password":"Passwort: mindestens 6 Zeichen.","auth/missing-password":"Bitte Passwort eingeben.","auth/network-request-failed":"Keine Verbindung."};return m[e.code]||"Fehler: "+(e.code||e.message)}
 async function doAuth(kind){
   if(!window.FB){$a("aMsg").textContent="Firebase ist nicht eingerichtet.";return}
@@ -1402,7 +1407,7 @@ const toast=m=>{MP.msg=m;MP.msgT=160};
 const uid=()=>window.FB.user.uid;
 const mpOK=()=>!!(window.MPB&&window.FB&&window.FB.user);
 function mpWhy(){return !window.MPB?"Multiplayer ist nicht eingerichtet (Realtime Database).":"Bitte erst einloggen (LOG IN)."}
-const VER=18;
+const VER=19;
 let lobbyFlag=null;
 function lobbySync(){
   if(!MP.code||!MP.joined||!window.MPB||!window.FB||!window.FB.user)return;
