@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="game-version" content="21">
+<meta name="game-version" content="22">
 <title>Blobbo Hop</title>
 <style>
 /* Comic Neue Bold (SIL Open Font License 1.1) - eingebettet, damit die Schrift auf jedem Geraet gleich aussieht */
@@ -284,7 +284,7 @@ async function cloudFlush(){
   clearTimeout(cloudT);
   const nm=String(SV.name||"Spieler").slice(0,14)||"Spieler";
   const co=cn(SV.coins),to=isAdminUser()?cn(SV.total):Math.max(cn(SV.total),co);
-  const data={name:nm,bestH:cn(SV.bestH),total:to,coins:co,own:SV.own.slice(0,200),eq:SV.eq,best:cn(best),ts:SV.ts||Date.now()};
+  const data={name:nm,bestH:cn(SV.bestH),total:to,coins:co,own:SV.own.slice(0,200),eq:SV.eq,best:cn(best),pc:cn(SV.pc),q:qClean(),ts:SV.ts||Date.now()};
   const lb={name:nm,bestH:data.bestH,best:data.best,total:data.total,col:SV.eq.col,hat:SV.eq.hat};
   let ok=false;
   try{
@@ -301,8 +301,8 @@ async function cloudFlush(){
 addEventListener("online",()=>cloudFlush());
 addEventListener("pagehide",()=>cloudFlush());
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")cloudFlush()});
-const FRB={x:120,y:408,w:160,h:44},MB={x:120,y:460,w:160,h:44},AB={x:120,y:512,w:160,h:44},GB={x:120,y:564,w:160,h:44};
-function acctBtn(){btn(AB.x,AB.y,AB.w,AB.h,(window.FB&&window.FB.user)?"ACCOUNT":"LOG IN","#5bb8ff");btn(GB.x,GB.y,GB.w,GB.h,"SETTINGS","#a77bff");btn(MB.x,MB.y,MB.w,MB.h,"MULTIPLAYER","#6bd96b");btn(FRB.x,FRB.y,FRB.w,FRB.h,"FREUNDE","#ffa94d");if(FR.reqs.length){ctx.beginPath();ctx.arc(FRB.x+FRB.w-4,FRB.y+4,11,0,7);outline("#ff4d6d");text(String(FR.reqs.length),FRB.x+FRB.w-4,FRB.y+10,15)}}
+const QB={x:120,y:392,w:160,h:40},FRB={x:120,y:438,w:160,h:40},MB={x:120,y:484,w:160,h:40},AB={x:120,y:530,w:160,h:40},GB={x:120,y:576,w:160,h:40};
+function acctBtn(){btn(AB.x,AB.y,AB.w,AB.h,(window.FB&&window.FB.user)?"ACCOUNT":"LOG IN","#5bb8ff");btn(GB.x,GB.y,GB.w,GB.h,"SETTINGS","#a77bff");btn(MB.x,MB.y,MB.w,MB.h,"MULTIPLAYER","#6bd96b");btn(FRB.x,FRB.y,FRB.w,FRB.h,"FREUNDE","#ffa94d");btn(QB.x,QB.y,QB.w,QB.h,"QUESTS","#b07bff");{const qc=qClaimable();if(qc>0){ctx.beginPath();ctx.arc(QB.x+QB.w-4,QB.y+4,11,0,7);outline("#6bd96b");text(String(qc),QB.x+QB.w-4,QB.y+10,15)}}if(FR.reqs.length){ctx.beginPath();ctx.arc(FRB.x+FRB.w-4,FRB.y+4,11,0,7);outline("#ff4d6d");text(String(FR.reqs.length),FRB.x+FRB.w-4,FRB.y+10,15)}}
 const CH={x:10,y:10,w:158,h:48};
 function pencil(x,y){ctx.save();ctx.translate(x,y);ctx.rotate(.8);rr(-3,-10,6,15,1);outline("#ffd23f");ctx.beginPath();ctx.moveTo(-3,5);ctx.lineTo(3,5);ctx.lineTo(0,11);ctx.closePath();outline("#ffe9a8");ctx.restore()}
 function chip(){
@@ -319,7 +319,7 @@ function chip(){
 }
 function colV(id){return ITEMS.col.find(i=>i.id===id).v}
 let ovr=null,tab="col",msg="",msgT=0,gain=0,shopScroll=0,sd=null;
-const SB={x:120,y:356,w:160,h:44};
+const SB={x:120,y:346,w:160,h:40};
 function hit(x,y,r){return x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h}
 let wingPh=0;
 function featherPath(len,w){ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(len*.35,-w*.75,len,0);ctx.quadraticCurveTo(len*.35,w*.75,0,0);ctx.closePath()}
@@ -695,7 +695,7 @@ addEventListener("keydown",e=>{if(updOpen){e.preventDefault();return}if(bindKey)
   if(admOpen&&e.key==="Escape"){closeAdminDlg();return}
   if(authOpen&&e.key==="Escape"){if(!$a("statPop").hidden)$a("statPop").hidden=true;else closeAuthUI();return}
   if(admOpen||authOpen||joinOpen||friendOpen||invOpen)return;
-  if(e.key==="8"){openAdmin();return}keys[e.key.toLowerCase()]=true;if((state==="shop"||state==="settings"||state==="mp"||state==="board"||state==="friends")&&e.key==="Escape")closeShop();if(state==="lobby"&&e.key==="Escape")leaveRoom();if(state==="results"&&e.key==="Escape")state="lobby";if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
+  if(e.key==="8"){openAdmin();return}keys[e.key.toLowerCase()]=true;if((state==="shop"||state==="settings"||state==="mp"||state==="board"||state==="friends"||state==="quests")&&e.key==="Escape")closeShop();if(state==="lobby"&&e.key==="Escape")leaveRoom();if(state==="results"&&e.key==="Escape")state="lobby";if(e.key.toLowerCase()==="s"&&(state==="menu"||state==="over"))state="shop";if(e.key===" "||e.key==="Enter")start();if(e.key.startsWith("Arrow"))e.preventDefault()});
 addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 function gx(e){const r=c.getBoundingClientRect();return (e.clientX-r.left)/r.width*W}
 const dirOf=e=>{const r=c.getBoundingClientRect();return e.clientX<r.left+r.width/2?-1:1};
@@ -712,6 +712,7 @@ addEventListener("pointerdown",e=>{
   if(state==="lobby"){lobbyClick(x,y);return}
   if(state==="results"){resultsClick(x,y);return}
   if(state==="admin"){adminClick(x,y);return}
+  if(state==="quests"){questsClick(x,y);return}
   if(state==="spectate"){specClick(x,y);return}
   if((state==="menu"||state==="over")&&hit(x,y,SB)){state="shop";beep(500,.08,"triangle");return}
   if(state==="menu"&&hit(x,y,LB)){openBoard();return}
@@ -720,6 +721,7 @@ addEventListener("pointerdown",e=>{
   if((state==="menu"||state==="over")&&hit(x,y,GB)){state="settings";beep(500,.08,"triangle");return}
   if((state==="menu"||state==="over")&&hit(x,y,MB)){state="mp";beep(500,.08,"triangle");return}
   if((state==="menu"||state==="over")&&hit(x,y,FRB)){openFriends();return}
+  if((state==="menu"||state==="over")&&hit(x,y,QB)){openQuests();return}
   if(state==="menu"&&x<60&&y>H-60){const n=performance.now();tapN=(n-tapT<2000)?tapN+1:1;tapT=n;if(tapN>=5){tapN=0;openAdmin();return}}
   if(e.pointerType!=="mouse"){holdDir=dirOf(e);ptr=null}else ptr=Math.max(0,Math.min(W,x));
   start();
@@ -736,7 +738,7 @@ addEventListener("wheel",e=>{if(state==="shop")shopScroll+=e.deltaY;if(state==="
 addEventListener("blur",()=>{ptr=null;holdDir=0});
 addEventListener("pointerup",upF);addEventListener("pointercancel",upF);
 function start(){
-  if(state==="play"||state==="shop"||state==="settings"||state==="mp"||state==="lobby"||state==="board"||state==="spectate"||state==="friends"||state==="results"||state==="admin")return;
+  if(state==="play"||state==="shop"||state==="settings"||state==="mp"||state==="lobby"||state==="board"||state==="spectate"||state==="friends"||state==="results"||state==="admin"||state==="quests")return;
   if(state==="over"&&t-overAt<40)return;
   reset();state="play";beep(520,.15,"triangle",.08,300);
 }
@@ -744,7 +746,7 @@ let overAt=0;
 function gameOver(){
   state="over";overAt=t;shake=14;beep(300,.5,"sawtooth",.08,-250);
   const total=Math.floor(score+bonus);
-  gain=coinsTotal+Math.floor(total/200);SV.coins+=gain;SV.total=(SV.total||0)+gain;const hm=Math.floor(maxH/10);if(hm>(SV.bestH||0))SV.bestH=hm;if(total>best){best=total;try{localStorage.setItem("blobbo-best",best)}catch(e){}}
+  gain=coinsTotal+Math.floor(total/200);SV.coins+=gain;SV.total=(SV.total||0)+gain;const hm=Math.floor(maxH/10);if(hm>(SV.bestH||0))SV.bestH=hm;if(!godOn()){qAdd("runs",1);qMax("score",total);qMax("height",hm)}if(total>best){best=total;try{localStorage.setItem("blobbo-best",best)}catch(e){}}
   save();
   burst(P.x,H-30,"#ff6b8b",30,7);
   if(MP.active)mpDied(total);
@@ -792,13 +794,13 @@ function update(){
       if(p.type==="s"){P.vy=-19;shake=6;beep(380,.25,"sine",.1,500);burst(P.x,p.y,"#ff6b8b",14);pop(P.x,p.y-30,"BOING!","#ff6b8b")}
       else{P.vy=-11.2;beep(260,.1,"square",.04,200)}
       if(p.type==="b"){p.dead=true;burst(p.x+p.w/2,p.y,"#b5835a",12)}
-      P.sx=1.4;P.sy=.6;burst(P.x,p.y,"#fff",5,2);if(SV.eq.hat==="legend")burst(P.x,p.y-20,"#ffd23f",7,3);if(SV.eq.hat==="wings"){featherBurst(P.x,p.y-18);beep(1250,.07,"triangle",.04)}
+      P.sx=1.4;P.sy=.6;burst(P.x,p.y,"#fff",5,2);if(!godOn()){qAdd("jumps",1);if(p.type==="m")qAdd("moving",1);if(p.type==="s")qAdd("spring",1)}if(SV.eq.hat==="legend")burst(P.x,p.y-20,"#ffd23f",7,3);if(SV.eq.hat==="wings"){featherBurst(P.x,p.y-18);beep(1250,.07,"triangle",.04)}
     }
   });
   // coins
   coins.forEach(k=>{
     if(!k.got&&Math.hypot(k.x-P.x,k.y-P.y)<P.r+14){
-      k.got=true;combo++;comboT=110;coinsTotal++;
+      k.got=true;combo++;comboT=110;coinsTotal++;if(!godOn()){qAdd("coins",1);qMax("combo",combo)}
       const pts=10*combo;bonus+=pts;
       pop(k.x,k.y-10,"+"+pts+(combo>1?" x"+combo:""),"#ffd23f");
       burst(k.x,k.y,"#ffd23f",10);beep(700+combo*60,.12,"triangle",.07,300);
@@ -809,6 +811,7 @@ function update(){
   if(P.y<H*.4){
     const d=H*.4-P.y;P.y=H*.4;maxH+=d;score=maxH/10;
     const hm2=Math.floor(maxH/10);if(!godOn()&&hm2>(SV.bestH||0)){SV.bestH=hm2;bestHDirty=true}
+    if(!godOn()){qMax("height",hm2);qMax("score",Math.floor(score+bonus));qAdd("climb",d/10)}
     plats.forEach(p=>p.y+=d);coins.forEach(k=>k.y+=d);topY+=d;
     parts.forEach(q=>q.y+=d);pops.forEach(q=>q.y+=d);trailHist.forEach(q=>q.y+=d);
     clouds.forEach(cl=>{cl.y+=d*.3*cl.s;if(cl.y>H+40){cl.y=-40;cl.x=Math.random()*W}});
@@ -817,7 +820,7 @@ function update(){
   plats=plats.filter(p=>p.y<H+60);coins=coins.filter(k=>k.y<H+60&&!k.got);
   if(P.y>H+40){if(godOn()){P.y=H-60;P.vy=-14;P.sx=1.4;P.sy=.6}else gameOver()}
   if(MP.active&&state==="play")mpTick();
-  if(bestHDirty&&t%300===0){bestHDirty=false;save()}
+  if((bestHDirty||qDirty)&&t%300===0){bestHDirty=false;qDirty=false;save()}
   updFx();
 }
 function updFx(){
@@ -984,9 +987,9 @@ function draw(){
     ctx.fillStyle="rgba(43,33,64,.35)";ctx.fillRect(0,0,W,H);
     ctx.save();ctx.translate(W/2,170);ctx.rotate(Math.sin(t*.04)*.05);
     text("BLOBBO",0,0,84,"#ffd23f");text("HOP!",0,72,84,"#ff6b8b");ctx.restore();
-    text("Tippen oder Leertaste zum Start",W/2,292,22);
-    text("Pfeiltasten / "+kname(ST.kl)+" "+kname(ST.kr)+" / Maus oder Finger halten",W/2,320,18,"#ffe9a8");
-    text("Münzen sammeln = Combo, rote Feder = Turbo",W/2,344,16,"#ffe9a8");
+    text("Tippen oder Leertaste zum Start",W/2,278,22);
+    text("Pfeiltasten / "+kname(ST.kl)+" "+kname(ST.kr)+" / Maus oder Finger halten",W/2,304,18,"#ffe9a8");
+    text("Münzen sammeln = Combo, rote Feder = Turbo",W/2,326,16,"#ffe9a8");
     btn(SB.x,SB.y,SB.w,SB.h,"SHOP","#ff6b8b");acctBtn();chip();
     if(best)text("Rekord "+best,W-16,34,22,"#ffd23f","right");
   }
@@ -1007,7 +1010,7 @@ function draw(){
 // ---------- Account (Firebase) ----------
 let authOpen=false,pendingName=null;
 const $a=id=>document.getElementById(id);
-const DEF=()=>({name:"Spieler",bestH:0,total:0,coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}});
+const DEF=()=>({name:"Spieler",bestH:0,total:0,coins:0,pc:0,q:null,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}});
 function drawAvatar(){
   const cv=$a("avatar");if(!cv)return;
   const old=ctx,g=cv.getContext("2d");ctx=g;
@@ -1028,7 +1031,7 @@ function renderTiles(){
   let have=0,all=0;
   for(const k in ITEMS)ITEMS[k].forEach(i=>{all++;if(SV.own.includes(k+":"+i.id)||i.p===0)have++});
   const nm=(cat,id)=>{const it=ITEMS[cat].find(x=>x.id===(id||"none"));return it?it.n:"-"};
-  [["Beste Höhe",(SV.bestH||0)+" m"],["Items",have+" / "+all],["Freunde",String(FR.ids.length)],["Farbe",nm("col",SV.eq.col)],["Hut",nm("hat",SV.eq.hat)],["Schweif",nm("trail",SV.eq.trail)]].forEach(([l,v])=>{
+  [["Beste Höhe",(SV.bestH||0)+" m"],["Items",have+" / "+all],["Freunde",String(FR.ids.length)],["Farbe",nm("col",SV.eq.col)],["Hut",nm("hat",SV.eq.hat)],["Schweif",nm("trail",SV.eq.trail)],["Lila Münzen",fmt(SV.pc||0)],["Quests heute",qDoneCount()+" / 5"]].forEach(([l,v])=>{
     const d=document.createElement("div"),b=document.createElement("b"),sp=document.createElement("span");
     b.textContent=v;sp.textContent=l;d.appendChild(b);d.appendChild(sp);box.appendChild(d);
   });
@@ -1111,7 +1114,7 @@ async function onUser(){
         total:Math.max(same?cn(SV.total):0,cn(d.total!==undefined?d.total:d.coins)),
         coins:same?cn(SV.coins):cn(d.coins),
         own:[...new Set([...df.own,...(Array.isArray(d.own)?d.own:[]),...(same?SV.own:[])])],
-        eq:same?SV.eq:(d.eq||df.eq)};
+        eq:same?SV.eq:(d.eq||df.eq),pc:Math.max(cn(SV.pc),cn(d.pc)),q:qMerge(SV.q,d.q)};
       best=Math.max(best,cn(d.best));try{localStorage.setItem("blobbo-best",best)}catch(e){}
     }else{
       SV.uid=u.uid;if(pendingName)SV.name=pendingName;
@@ -1394,6 +1397,119 @@ $a("fdOk").onclick=doAddFriend;$a("fdNo").onclick=closeFriendDlg;
 $a("fdIn").onkeydown=e=>{if(e.key==="Enter")doAddFriend()};
 $a("fdIn").oninput=e=>{e.target.value=e.target.value.replace(/[^0-9]/g,"")};
 
+// ---------- Quests (taeglich 5, Belohnung: lila Muenzen) ----------
+const QDEF={
+  runs:{txt:n=>"Spiele "+n+" Runden"},
+  coins:{txt:n=>"Sammle "+n+" Münzen"},
+  jumps:{txt:n=>"Springe "+n+" Mal"},
+  height:{txt:n=>"Komme "+n+" m hoch (eine Runde)"},
+  score:{txt:n=>"Erreiche "+n+" Punkte in einer Runde"},
+  spring:{txt:n=>"Nutze "+n+" Sprungfedern"},
+  moving:{txt:n=>"Lande auf "+n+" beweglichen Plattformen"},
+  combo:{txt:n=>"Erreiche eine "+n+"er Münz-Combo"},
+  climb:{txt:n=>"Klettere insgesamt "+n+" m"},
+  mp:{txt:n=>"Spiele "+n+" Multiplayer-Runde"}
+};
+const QTIERS={
+  1:[["runs",3],["coins",30],["jumps",100],["height",300]],
+  2:[["height",600],["coins",60],["spring",5],["moving",8],["jumps",250]],
+  3:[["height",1000],["coins",100],["score",1500],["combo",5],["climb",2000]],
+  4:[["height",1600],["climb",4000],["coins",180],["combo",8],["score",3000]],
+  5:[["height",2500],["score",5000],["coins",300],["climb",8000]]
+};
+const hashStr=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0};
+const qToday=()=>{const n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")};
+let qCache={day:"",list:[]},qDirty=false;const qNote={},QFX=[];
+function qList(day){
+  if(qCache.day===day)return qCache.list;
+  const R=mulberry32(hashStr(day)),used=new Set(),out=[];
+  for(let tier=1;tier<=5;tier++){
+    const opts=QTIERS[tier].filter(o=>!used.has(o[0])),o=opts[Math.floor(R()*opts.length)]||QTIERS[tier][0];
+    used.add(o[0]);out.push({id:o[0]+o[1],type:o[0],target:o[1],tier,reward:tier,text:QDEF[o[0]].txt(o[1])});
+  }
+  qCache={day,list:out};return out;
+}
+function qEnsure(){
+  const d=qToday();
+  if(!SV.q||typeof SV.q!=="object"||SV.q.day!==d||!SV.q.prog||!SV.q.claimed){SV.q={day:d,prog:{},claimed:{}};qDirty=true}
+}
+const qProg=type=>Math.floor((SV.q&&SV.q.prog&&SV.q.prog[type])||0);
+const qDone=q=>qProg(q.type)>=q.target;
+function qCheck(type){
+  for(const q of qList(SV.q.day)){
+    const key=q.id+SV.q.day;
+    if(q.type===type&&!qNote[key]&&qDone(q)&&!SV.q.claimed[q.id]){qNote[key]=1;invToast("Quest geschafft: "+q.text);beep(880,.12,"triangle",.07)}
+  }
+}
+function qAdd(type,n){qEnsure();SV.q.prog[type]=(SV.q.prog[type]||0)+n;qDirty=true;qCheck(type)}
+function qMax(type,v){qEnsure();if(v>(SV.q.prog[type]||0)){SV.q.prog[type]=v;qDirty=true;qCheck(type)}}
+function qClean(){qEnsure();const p={};for(const k in SV.q.prog)p[k]=Math.floor(SV.q.prog[k]);return{day:SV.q.day,prog:p,claimed:Object.assign({},SV.q.claimed)}}
+function qMerge(a,b){
+  const ok=x=>x&&typeof x==="object"&&typeof x.day==="string"&&x.prog&&x.claimed;
+  if(!ok(a))return ok(b)?b:null;if(!ok(b))return a;
+  if(a.day===b.day){
+    const prog=Object.assign({},a.prog);for(const k in b.prog)prog[k]=Math.max(prog[k]||0,b.prog[k]||0);
+    return{day:a.day,prog,claimed:Object.assign({},a.claimed,b.claimed)};
+  }
+  return a.day>b.day?a:b;
+}
+function qClaimable(){qEnsure();return qList(SV.q.day).filter(q=>qDone(q)&&!SV.q.claimed[q.id]).length}
+function qDoneCount(){qEnsure();return qList(SV.q.day).filter(q=>qDone(q)).length}
+function qClaim(q,i){
+  if(!qDone(q)||SV.q.claimed[q.id])return;
+  SV.q.claimed[q.id]=true;SV.pc=(SV.pc||0)+q.reward;save();
+  QFX.push({x:58,y:QY(i)+34,t0:t,txt:"+"+q.reward});
+  beep(700,.08,"triangle",.07);setTimeout(()=>beep(1000,.12,"triangle",.07),90);
+}
+const QY=i=>118+i*84;
+function pcoin(x,y,r){
+  ctx.beginPath();ctx.arc(x,y,r,0,7);outline("#a77bff");
+  ctx.beginPath();ctx.arc(x,y,r*.62,0,7);ctx.lineWidth=Math.max(1.5,r*.12);ctx.strokeStyle="rgba(255,255,255,.55)";ctx.stroke();
+  ctx.beginPath();starPath(x,y,r*.4);ctx.fillStyle="#fff";ctx.fill();
+}
+function wrapLines(str,max){
+  const out=[];let line="";
+  String(str).split(" ").forEach(w=>{if((line+" "+w).trim().length>max){out.push(line);line=w}else line=(line+" "+w).trim()});
+  if(line)out.push(line);return out.slice(0,2);
+}
+function openQuests(){qEnsure();state="quests";beep(500,.08,"triangle")}
+function questsClick(x,y){
+  if(hit(x,y,{x:120,y:584,w:160,h:40})){closeShop();return}
+  qEnsure();
+  qList(SV.q.day).forEach((q,i)=>{if(qDone(q)&&!SV.q.claimed[q.id]&&hit(x,y,{x:292,y:QY(i)+20,w:82,h:36}))qClaim(q,i)});
+}
+function drawQuests(){
+  qEnsure();const list=qList(SV.q.day);
+  ctx.fillStyle="#bdeaff";ctx.fillRect(0,0,W,H);
+  cloud((t*.2)%520-100,160,.9);cloud((t*.13+240)%520-100,430,1);
+  shad(60,10,280,56,18);rr(60,10,280,56,18);outline("#b07bff");text("QUESTS",W/2,50,34);pcoin(90,38,13);pcoin(310,38,13);
+  const n=new Date(),ms=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1)-n,h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000);
+  shad(20,76,360,34,14);rr(20,76,360,34,14);outline("#fffdf2");
+  text("Neue Quests in "+h+" Std. "+String(m).padStart(2,"0")+" Min.",34,98,13,"#fff","left");
+  pcoin(318,93,11);text(fmt(SV.pc||0),372,100,17,"#ffd23f","right");
+  const stripe=["#d9c6ff","#c3a3ff","#ad82ff","#9660ff","#7d3dff"];
+  list.forEach((q,i)=>{
+    const y=QY(i),pr=Math.min(qProg(q.type),q.target),done=qDone(q),cl=!!SV.q.claimed[q.id];
+    shad(20,y,360,76,14);rr(20,y,360,76,14);outline(cl?"#ece6f7":done?"#d7ffd0":"#fffdf2");
+    ctx.save();rr(20,y,360,76,14);ctx.clip();ctx.fillStyle=stripe[i];ctx.fillRect(20,y,12,76);ctx.restore();
+    rr(20,y,360,76,14);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
+    pcoin(58,y+36,20);text("+"+q.reward,58,y+43,18,"#fff");
+    wrapLines(q.text,24).forEach((l,k)=>text(l,92,y+23+k*17,14,"#fff","left"));
+    rr(92,y+50,184,16,8);outline("#e0d8ef");
+    if(pr>0){rr(92,y+50,Math.max(12,184*pr/q.target),16,8);outline(done?"#6bd96b":"#a77bff")}
+    text(pr+" / "+q.target,184,y+63,11,"#fff");
+    if(cl){ctx.beginPath();ctx.arc(334,y+38,18,0,7);outline("#c9b8ff");ctx.beginPath();ctx.moveTo(325,y+38);ctx.lineTo(332,y+45);ctx.lineTo(344,y+31);ctx.lineWidth=4;ctx.strokeStyle="#fff";ctx.stroke()}
+    else if(done)btn3d(292,y+20,82,36,"ABHOLEN","#6bd96b",14);
+    else text(Math.floor(100*pr/q.target)+"%",334,y+46,20,"#c9b8ff");
+  });
+  for(let k=QFX.length-1;k>=0;k--){
+    const f=QFX[k],age=t-f.t0;if(age>70){QFX.splice(k,1);continue}
+    const ga=ctx.globalAlpha;ctx.globalAlpha=ga*Math.max(0,1-age/70);
+    pcoin(f.x+30,f.y-age*1.1,16);text(f.txt,f.x+62,f.y-age*1.1+7,22,"#fff");ctx.globalAlpha=ga;
+  }
+  btn3d(120,584,160,40,"Zurück","#a77bff",22);
+}
+
 // ---------- Leaderboard ----------
 const BD={best:null,bestH:null,total:null,err:null},BL={best:false,bestH:false,total:false},MED=["#ffd23f","#c0c8d8","#e0955a"];
 let btab="best",boardScroll=0;
@@ -1481,7 +1597,7 @@ const toast=m=>{MP.msg=m;MP.msgT=160};
 const uid=()=>window.FB.user.uid;
 const mpOK=()=>!!(window.MPB&&window.FB&&window.FB.user);
 function mpWhy(){return !window.MPB?"Multiplayer ist nicht eingerichtet (Realtime Database).":"Bitte erst einloggen (LOG IN)."}
-const VER=21;
+const VER=22;
 let lobbyFlag=null;
 function lobbySync(){
   if(!MP.code||!MP.joined||!window.MPB||!window.FB||!window.FB.user)return;
@@ -1576,7 +1692,7 @@ function mpTick(){
   window.MPB.set("rooms/"+MP.code+"/pos/"+uid(),{x:Math.round(P.x),a:Math.round(a),f:P.face}).catch(()=>{});
 }
 function mpDied(total){
-  MP.active=false;state="lobby";startSpectate();
+  MP.active=false;state="lobby";startSpectate();qAdd("mp",1);
   const me0=MP.room&&MP.room.players&&MP.room.players[uid()],tot0=Math.max(0,(me0&&+me0.total)||0);
   window.MPB.update("rooms/"+MP.code,{["players/"+uid()+"/alive"]:false,["players/"+uid()+"/score"]:total,["players/"+uid()+"/total"]:tot0+Math.max(0,Math.floor(total)),["players/"+uid()+"/ready"]:false,["pos/"+uid()]:null}).catch(()=>{});
 }
@@ -1917,7 +2033,7 @@ async function adRestore(){
   try{
     const b=await F.latestBackup();
     if(!b){adToast("Kein Backup gefunden.");return}
-    SV={uid:F.user.uid,ts:Date.now(),name:b.name||SV.name,bestH:Math.max(cn(SV.bestH),cn(b.bestH)),total:Math.max(cn(SV.total),cn(b.total)),coins:cn(b.coins),own:[...new Set([...SV.own,...(Array.isArray(b.own)?b.own:[])])],eq:b.eq||SV.eq};
+    SV={uid:F.user.uid,ts:Date.now(),name:b.name||SV.name,bestH:Math.max(cn(SV.bestH),cn(b.bestH)),total:Math.max(cn(SV.total),cn(b.total)),coins:cn(b.coins),own:[...new Set([...SV.own,...(Array.isArray(b.own)?b.own:[])])],eq:b.eq||SV.eq,pc:Math.max(cn(SV.pc),cn(b.pc)),q:qMerge(SV.q,b.q)};
     best=Math.max(best,cn(b.best));cloudReady=true;save();
     adToast("Backup vom "+(b.at?new Date(b.at).toLocaleDateString("de-DE"):"?")+" eingespielt");beep(880,.15,"triangle");
   }catch(e){adToast("Fehler: "+(e.code||e.message))}
@@ -2029,7 +2145,7 @@ function loop(now){
   while(!updOpen&&acc>=STEP-2&&n<6){update();acc-=STEP;n++}
   if(n>=6)acc=0;
   draw();
-  if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="friends")drawFriends();if(state==="results")drawResults();if(state==="admin")drawAdmin();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();
+  if(state==="shop")drawShop();if(state==="settings")drawSettings();if(state==="mp")drawMP();if(state==="board")drawBoard();if(state==="friends")drawFriends();if(state==="results")drawResults();if(state==="admin")drawAdmin();if(state==="quests")drawQuests();if(state==="spectate")drawSpectate();if(state==="lobby")drawLobby();
   drawInvite();
   lobbySync();
   if(ST.fps)text(fpsV+" FPS",W-8,H-8,12,"#fff","right");
