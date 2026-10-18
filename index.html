@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="game-version" content="23">
+<meta name="game-version" content="24">
 <title>Blobbo Hop</title>
 <style>
 /* Comic Neue Bold (SIL Open Font License 1.1) - eingebettet, damit die Schrift auf jedem Geraet gleich aussieht */
@@ -266,10 +266,10 @@ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let z=Math.imul(a
 const keys={};let ptr=null,rel=null,holdDir=0;
 // ---------- Shop-Daten ----------
 const ITEMS={
- col:[{id:"orange",n:"Orange",p:0,v:"#ff8c42"},{id:"mint",n:"Minze",p:30,v:"#4fd6a4"},{id:"pink",n:"Bubblegum",p:40,v:"#ff7eb6"},{id:"blue",n:"Wolke",p:50,v:"#5bb8ff"},{id:"coral",n:"Koralle",p:55,v:"#ff7f6e"},{id:"red",n:"Tomate",p:60,v:"#ff5b5b"},{id:"lemon",n:"Zitrone",p:65,v:"#ffe84a"},{id:"lime",n:"Limette",p:70,v:"#b8e84a"},{id:"purple",n:"Traube",p:80,v:"#a77bff"},{id:"choco",n:"Schoko",p:85,v:"#8a5a3c"},{id:"teal",n:"Lagune",p:90,v:"#2ec4b6"},{id:"rose",n:"Rosé",p:95,v:"#ff9ec4"},{id:"night",n:"Schatten",p:110,v:"#6b5b95"},{id:"gold",n:"Gold",p:150,v:"#ffd23f"},{id:"sunstripe",n:"Sonnenstreifen",p:150,v:"sunstripe"},{id:"tiger",n:"Tiger",p:180,v:"tiger"},{id:"bee",n:"Biene",p:200,v:"bee"},{id:"candy",n:"Zuckerstange",p:220,v:"candy"},{id:"ice",n:"Eiskristall",p:250,v:"#aef3ff"},{id:"zebra",n:"Zebra",p:250,v:"zebra"},{id:"sunset",n:"Sonnenuntergang",p:300,v:"sunset"},{id:"ocean",n:"Ozean",p:300,v:"ocean"},{id:"flow",n:"Wellen",p:350,v:"flow"},{id:"runner",n:"Laufstreifen",p:400,v:"runner"},{id:"fire",n:"Feuer",p:450,v:"fire"},{id:"rainstripe",n:"Regenbogenstreifen",p:450,v:"rainstripe"},{id:"rainbow",n:"Regenbogen",p:500,v:"rainbow"},{id:"neon",n:"Neon",p:500,v:"neon"},{id:"aurora",n:"Polarlicht",p:650,v:"aurora"},{id:"galaxy",n:"Galaxie",p:800,v:"galaxy"},{id:"amethyst",n:"Amethyst",p:1,pc:40,q:1,v:"amethyst"},{id:"nebula",n:"Nebel",p:1,pc:70,q:1,v:"nebula"},{id:"void",n:"Leere",p:1,pc:100,q:1,v:"void"}],
- hat:[{id:"none",n:"Kein Hut",p:0},{id:"cap",n:"Kappe",p:40},{id:"flower",n:"Blume",p:50},{id:"party",n:"Partyhut",p:60},{id:"chef",n:"Kochmütze",p:70},{id:"top",n:"Zylinder",p:80},{id:"cowboy",n:"Cowboyhut",p:90},{id:"horns",n:"Teufelshörner",p:100},{id:"wizard",n:"Zauberhut",p:110},{id:"halo",n:"Heiligenschein",p:120},{id:"propeller",n:"Propellerkappe",p:130},{id:"bunny",n:"Hasenohren",p:140},{id:"raincloud",n:"Regenwolke",p:160},{id:"sunflower",n:"Sonnenblume",p:180},{id:"crown",n:"Krone",p:200},{id:"ufo",n:"Ufo",p:300},{id:"flame",n:"Flammen",p:350},{id:"disco",n:"Discokugel",p:450},{id:"legend",n:"Sternenkrone",p:2000},{id:"wings",n:"Engelsflügel",p:5000},{id:"qcrown",n:"Lila Krone",p:1,pc:60,q:1},{id:"orbit",n:"Planeten-Orbit",p:1,pc:90,q:1},{id:"unicorn",n:"Einhorn-Horn",p:1,pc:130,q:1}],
- pad:[{id:"none",n:"Standard",p:0},{id:"log",n:"Baumstamm",p:50},{id:"baguette",n:"Baguette",p:60},{id:"cloud",n:"Wolke",p:70},{id:"snake",n:"Schlange",p:80},{id:"ice",n:"Eisscholle",p:90},{id:"candy",n:"Zuckerstange",p:100},{id:"hotdog",n:"Hotdog",p:130},{id:"sushi",n:"Sushi",p:150},{id:"rainbow",n:"Regenbogen",p:300},{id:"crystal",n:"Amethyst-Platte",p:1,pc:50,q:1},{id:"magma",n:"Magma",p:1,pc:90,q:1}],
- trail:[{id:"none",n:"Keine Spur",p:0},{id:"bubble",n:"Blasen",p:40},{id:"leaf",n:"Blätter",p:50},{id:"spark",n:"Funken",p:60},{id:"heart",n:"Herzen",p:90},{id:"rainbow",n:"Regenbogen",p:120},{id:"fire",n:"Feuer",p:150},{id:"star",n:"Sterne",p:180},{id:"galaxy",n:"Galaxie",p:300},{id:"rainbowtail",n:"Regenbogenschweif",p:2000},{id:"smoke",n:"Lila Rauch",p:1,pc:40,q:1},{id:"comet",n:"Kometenschweif",p:1,pc:110,q:1}]
+ col:[{id:"orange",n:"Orange",p:0,v:"#ff8c42"},{id:"mint",n:"Minze",p:30,v:"#4fd6a4"},{id:"pink",n:"Bubblegum",p:40,v:"#ff7eb6"},{id:"blue",n:"Wolke",p:50,v:"#5bb8ff"},{id:"coral",n:"Koralle",p:55,v:"#ff7f6e"},{id:"red",n:"Tomate",p:60,v:"#ff5b5b"},{id:"lemon",n:"Zitrone",p:65,v:"#ffe84a"},{id:"lime",n:"Limette",p:70,v:"#b8e84a"},{id:"purple",n:"Traube",p:80,v:"#a77bff"},{id:"choco",n:"Schoko",p:85,v:"#8a5a3c"},{id:"teal",n:"Lagune",p:90,v:"#2ec4b6"},{id:"rose",n:"Rosé",p:95,v:"#ff9ec4"},{id:"night",n:"Schatten",p:110,v:"#6b5b95"},{id:"gold",n:"Gold",p:150,v:"#ffd23f"},{id:"sunstripe",n:"Sonnenstreifen",p:150,v:"sunstripe"},{id:"tiger",n:"Tiger",p:180,v:"tiger"},{id:"bee",n:"Biene",p:200,v:"bee"},{id:"candy",n:"Zuckerstange",p:220,v:"candy"},{id:"ice",n:"Eiskristall",p:250,v:"#aef3ff"},{id:"zebra",n:"Zebra",p:250,v:"zebra"},{id:"sunset",n:"Sonnenuntergang",p:300,v:"sunset"},{id:"ocean",n:"Ozean",p:300,v:"ocean"},{id:"flow",n:"Wellen",p:350,v:"flow"},{id:"runner",n:"Laufstreifen",p:400,v:"runner"},{id:"fire",n:"Feuer",p:450,v:"fire"},{id:"rainstripe",n:"Regenbogenstreifen",p:450,v:"rainstripe"},{id:"rainbow",n:"Regenbogen",p:500,v:"rainbow"},{id:"neon",n:"Neon",p:500,v:"neon"},{id:"aurora",n:"Polarlicht",p:650,v:"aurora"},{id:"galaxy",n:"Galaxie",p:800,v:"galaxy"},{id:"plum",n:"Pflaume",p:1,pc:10,q:1,v:"#7a3fa0"},{id:"lavstripe",n:"Lavendelstreifen",p:1,pc:25,q:1,v:"lavstripe"},{id:"amethyst",n:"Amethyst",p:1,pc:40,q:1,v:"amethyst"},{id:"nebula",n:"Nebel",p:1,pc:70,q:1,v:"nebula"},{id:"void",n:"Leere",p:1,pc:100,q:1,v:"void"}],
+ hat:[{id:"none",n:"Kein Hut",p:0},{id:"cap",n:"Kappe",p:40},{id:"flower",n:"Blume",p:50},{id:"party",n:"Partyhut",p:60},{id:"chef",n:"Kochmütze",p:70},{id:"top",n:"Zylinder",p:80},{id:"cowboy",n:"Cowboyhut",p:90},{id:"horns",n:"Teufelshörner",p:100},{id:"wizard",n:"Zauberhut",p:110},{id:"halo",n:"Heiligenschein",p:120},{id:"propeller",n:"Propellerkappe",p:130},{id:"bunny",n:"Hasenohren",p:140},{id:"raincloud",n:"Regenwolke",p:160},{id:"sunflower",n:"Sonnenblume",p:180},{id:"crown",n:"Krone",p:200},{id:"ufo",n:"Ufo",p:300},{id:"flame",n:"Flammen",p:350},{id:"disco",n:"Discokugel",p:450},{id:"legend",n:"Sternenkrone",p:2000},{id:"wings",n:"Engelsflügel",p:5000},{id:"beanie",n:"Lila Mütze",p:1,pc:15,q:1},{id:"headband",n:"Sternenband",p:1,pc:20,q:1},{id:"magicstar",n:"Zauberstern",p:1,pc:30,q:1},{id:"qcrown",n:"Lila Krone",p:1,pc:60,q:1},{id:"orbit",n:"Planeten-Orbit",p:1,pc:90,q:1},{id:"unicorn",n:"Einhorn-Horn",p:1,pc:130,q:1}],
+ pad:[{id:"none",n:"Standard",p:0},{id:"log",n:"Baumstamm",p:50},{id:"baguette",n:"Baguette",p:60},{id:"cloud",n:"Wolke",p:70},{id:"snake",n:"Schlange",p:80},{id:"ice",n:"Eisscholle",p:90},{id:"candy",n:"Zuckerstange",p:100},{id:"hotdog",n:"Hotdog",p:130},{id:"sushi",n:"Sushi",p:150},{id:"rainbow",n:"Regenbogen",p:300},{id:"lcloud",n:"Lila Wolke",p:1,pc:15,q:1},{id:"gummy",n:"Gummi",p:1,pc:25,q:1},{id:"crystal",n:"Amethyst-Platte",p:1,pc:50,q:1},{id:"magma",n:"Magma",p:1,pc:90,q:1}],
+ trail:[{id:"none",n:"Keine Spur",p:0},{id:"bubble",n:"Blasen",p:40},{id:"leaf",n:"Blätter",p:50},{id:"spark",n:"Funken",p:60},{id:"heart",n:"Herzen",p:90},{id:"rainbow",n:"Regenbogen",p:120},{id:"fire",n:"Feuer",p:150},{id:"star",n:"Sterne",p:180},{id:"galaxy",n:"Galaxie",p:300},{id:"rainbowtail",n:"Regenbogenschweif",p:2000},{id:"pdots",n:"Lila Punkte",p:1,pc:12,q:1},{id:"stardust",n:"Sternenstaub",p:1,pc:25,q:1},{id:"smoke",n:"Lila Rauch",p:1,pc:40,q:1},{id:"comet",n:"Kometenschweif",p:1,pc:110,q:1}]
 };
 
 let SV={coins:0,own:["col:orange","hat:none","trail:none"],eq:{col:"orange",hat:"none",trail:"none"}};
@@ -382,6 +382,7 @@ const COLFX={
   fire:()=>{const f=Math.sin(t*.2)*.08;return grad([[0,"#8a1b1b"],[.3+f,"#ff3b3b"],[.65+f,"#ff9a3c"],[1,"#ffe45e"]])},
   neon:()=>`hsl(${180+120*(.5+.5*Math.sin(t*.05))},100%,${58+8*Math.sin(t*.12)}%)`,
   aurora:()=>{const h=140+40*Math.sin(t*.03);return grad([[0,`hsl(${h},85%,60%)`],[.5,`hsl(${h+60},85%,60%)`],[1,`hsl(${h+130},80%,55%)`]],-19,-19,19,19)},
+  lavstripe:()=>stripes(["#c9a0ff","#ffffff"],8,0,35),
   amethyst:()=>{const f=Math.sin(t*.05)*.15;return grad([[0,"#e0c8ff"],[.35+f,"#a77bff"],[.7+f,"#6b2fd6"],[1,"#3a1480"]],-19,-19,19,19)},
   nebula:()=>{const h=262+40*Math.sin(t*.02);return grad([[0,`hsl(${h},80%,62%)`],[.5,`hsl(${h+55},85%,52%)`],[1,`hsl(${h-45},75%,38%)`]],-19,19*Math.sin(t*.01),19,-19)},
   void:()=>{const g=ctx.createRadialGradient(0,0,2,0,0,20);g.addColorStop(0,"#000");g.addColorStop(.62,"#140828");g.addColorStop(.9,`hsl(275,90%,${36+10*Math.sin(t*.08)}%)`);g.addColorStop(1,"#c084ff");return g},
@@ -476,6 +477,30 @@ function drawHat2(h){
     rr(-2,-17,4,5,1);outline("#c9d3e8");
     for(let k=0;k<3;k++){const a=t*.05+k*2.1;ctx.beginPath();starPath(Math.cos(a)*22,Math.sin(a)*10,3+Math.sin(t*.3+k)*1.5);ctx.fillStyle=`hsl(${(t*5+k*100)%360},90%,70%)`;ctx.fill()}
     ctx.restore();return true;
+  }
+  if(h==="beanie"){
+    ctx.beginPath();ctx.arc(0,-12,17,Math.PI,0);ctx.closePath();outline("#9b6bff");
+    ctx.save();ctx.beginPath();ctx.arc(0,-12,16,Math.PI,0);ctx.closePath();ctx.clip();
+    ctx.fillStyle="#c9a0ff";for(let k=0;k<4;k++)ctx.fillRect(-18+k*10,-32,5,22);ctx.restore();
+    rr(-18,-17,36,6,3);outline("#7d3dff");
+    ctx.beginPath();ctx.arc(0,-31+Math.sin(t*.12)*1.5,5,0,7);outline("#fff");
+    return true;
+  }
+  if(h==="headband"){
+    rr(-19,-17,38,6,3);outline("#a77bff");
+    ctx.beginPath();starPath(-11,-21,8+Math.sin(t*.15)*1);outline("#ffd23f");
+    ctx.beginPath();starPath(12,-26+Math.sin(t*.2)*2,2.5);ctx.fillStyle="#fff";ctx.fill();
+    return true;
+  }
+  if(h==="magicstar"){
+    const b=Math.sin(t*.1)*3;
+    ctx.save();ctx.translate(0,-38+b);ctx.rotate(Math.sin(t*.07)*.3);
+    const g=ctx.createRadialGradient(0,0,2,0,0,18);g.addColorStop(0,"rgba(255,240,150,.7)");g.addColorStop(1,"rgba(255,240,150,0)");
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,18,0,7);ctx.fill();
+    ctx.beginPath();for(let k=0;k<10;k++){const r=k%2?5:11,an=-Math.PI/2+k*Math.PI/5;ctx.lineTo(Math.cos(an)*r,Math.sin(an)*r)}ctx.closePath();outline("#ffd23f");
+    ctx.restore();
+    for(let k=0;k<3;k++){const a=t*.08+k*2.1;ctx.beginPath();starPath(Math.cos(a)*17,-38+b+Math.sin(a)*8,2+Math.abs(Math.sin(t*.2+k))*1.5);ctx.fillStyle="#fffbd0";ctx.fill()}
+    return true;
   }
   if(h==="qcrown"){
     ctx.save();ctx.translate(0,Math.sin(t*.1)*1.2);
@@ -635,10 +660,10 @@ function trailPrev(id,cx,cy){
     }
     ctx.lineCap="butt";return;
   }
-  const cm={bubble:"#fff",leaf:"#6bd96b",spark:"#ffd23f",heart:"#ff6b8b",fire:"#ff8c42",star:"#ffd23f",galaxy:"#8a7bff",smoke:"#a77bff"};
+  const cm={bubble:"#fff",leaf:"#6bd96b",spark:"#ffd23f",heart:"#ff6b8b",fire:"#ff8c42",star:"#ffd23f",galaxy:"#8a7bff",smoke:"#a77bff",pdots:"#a77bff",stardust:"#e9d8ff"};
   for(let k=0;k<3;k++){
     const x=cx+24+k*10,y=cy+34+k*14;ctx.beginPath();
-    if(id==="heart")heartPath(x,y,6);else if(id==="star"||id==="galaxy")starPath(x,y,7);else ctx.arc(x,y,5,0,7);
+    if(id==="heart")heartPath(x,y,6);else if(id==="star"||id==="galaxy"||id==="stardust")starPath(x,y,7);else ctx.arc(x,y,5,0,7);
     outline(id==="rainbow"?`hsl(${k*120},90%,60%)`:cm[id]);
   }
 }
@@ -711,6 +736,7 @@ function hatFx(h){
     if(t%4===0)parts.push({x:P.x+(r()<.5?-1:1)*(24+r()*40),y:P.y-22+r()*28,vx:0,vy:.35+r()*.3,g:0,l:.95,ld:.012,col:"#fff",sh:"feather",r:3.5+r()*1.5,rot:r()*6,vr:(r()-.5)*.1,sw:.5,ph:r()*60});
     if(t%9===0)parts.push({x:P.x+(r()-.5)*80,y:P.y-10+(r()-.5)*40,vx:0,vy:-.3,g:0,l:.8,ld:.025,col:"#ffe066",sh:"star",r:4});
   }
+  else if(h==="magicstar"&&t%8===0)parts.push({x:P.x+(r()-.5)*30,y:P.y-40*P.sy,vx:(r()-.5)*.5,vy:-.5,g:0,l:.7,col:"#ffe066",sh:"star",r:4});
   else if(h==="qcrown"&&t%6===0)parts.push({x:P.x+(r()-.5)*30,y:P.y-34*P.sy,vx:(r()-.5)*.5,vy:-.8,g:0,l:.7,col:"#c9a0ff",sh:"star",r:4});
   else if(h==="unicorn"&&t%5===0)parts.push({x:P.x+(r()-.5)*26,y:P.y-44*P.sy,vx:(r()-.5)*.6,vy:-.6,g:0,l:.7,col:`hsl(${r()*360|0},95%,70%)`,sh:"star",r:4});
   else if(h==="raincloud"&&t%4===0)parts.push({x:P.x+(r()-.5)*24,y:P.y-30*P.sy,vx:0,vy:2,g:.1,l:.5,col:"#5bb8ff",r:2});
@@ -724,6 +750,8 @@ function emitTrail(tr){
   else if(tr==="heart"){o.col="#ff6b8b";o.sh="heart";o.r=6;o.vy=-.6;o.g=0}
   else if(tr==="fire"){o.col=["#ff4d4d","#ff8c42","#ffd23f"][Math.random()*3|0];o.vy=-1.8;o.vx=(Math.random()-.5)*1.2;o.g=-.05;o.r=6;o.l=.6}
   else if(tr==="star"){o.col="#ffd23f";o.sh="star";o.r=6;o.g=.1}
+  else if(tr==="pdots"){o.col=Math.random()<.5?"#a77bff":"#c9a0ff";o.r=5;o.g=.03}
+  else if(tr==="stardust"){o.col=["#e9d8ff","#c9a0ff","#ffffff"][Math.random()*3|0];o.sh="star";o.r=6;o.g=.05;o.vx=(Math.random()-.5)*1.2}
   else if(tr==="smoke"){o.col=["#a77bff","#8a4dff","#c9a0ff"][Math.random()*3|0];o.r=7+Math.random()*3;o.vy=-.25;o.vx=(Math.random()-.5)*.7;o.g=-.01;o.l=.9;o.ld=.022}
   else if(tr==="galaxy"){o.col=`hsl(${240+Math.random()*80},90%,${60+Math.random()*20}%)`;o.sh=Math.random()<.5?"star":null;o.r=5;o.g=0}
   parts.push(o);
@@ -944,6 +972,19 @@ function drawPadSkin(p,k){
     ctx.strokeStyle="#ffd0c2";ctx.lineWidth=2;
     for(let i=10;i<w-12;i+=14){ctx.beginPath();ctx.moveTo(x+i,y+2);ctx.lineTo(x+i+5,y+7);ctx.stroke()}
     rr(x+w/2-5,y-1,10,h+2,2);ctx.fillStyle="#2f3d2a";ctx.fill();ctx.lineWidth=2.5;ctx.strokeStyle=INK;ctx.stroke();
+  }else if(k==="lcloud"){
+    const bs=[[w*.25,y+5,5.5],[w*.5,y+3,7],[w*.75,y+5,5.5]];
+    ctx.lineWidth=6;ctx.strokeStyle=INK;
+    bs.forEach(([bx,by,r])=>{ctx.beginPath();ctx.arc(x+bx,by,r,0,7);ctx.stroke()});
+    rr(x,y+4,w,h-4,6);ctx.stroke();
+    ctx.fillStyle="#efe3ff";bs.forEach(([bx,by,r])=>{ctx.beginPath();ctx.arc(x+bx,by,r,0,7);ctx.fill()});
+    rr(x,y+4,w,h-4,6);ctx.fill();
+    ctx.fillStyle="#c9a0ff";rr(x+4,y+h-5,w-8,3,2);ctx.fill();
+  }else if(k==="gummy"){
+    rr(x,y,w,h,8);outline("#b07bff");
+    ctx.fillStyle="rgba(255,255,255,.55)";rr(x+6,y+3,w-12,4,2);ctx.fill();
+    ctx.fillStyle="rgba(75,31,168,.25)";rr(x+4,y+h-5,w-8,3,2);ctx.fill();
+    ctx.fillStyle="#fff";for(let i=14;i<w-8;i+=22){ctx.beginPath();ctx.arc(x+i,y+h/2+1,2,0,7);ctx.fill()}
   }else if(k==="crystal"){
     rr(x,y,w,h,6);outline("#a77bff");
     ctx.fillStyle="rgba(255,255,255,.45)";
@@ -1654,7 +1695,7 @@ const toast=m=>{MP.msg=m;MP.msgT=160};
 const uid=()=>window.FB.user.uid;
 const mpOK=()=>!!(window.MPB&&window.FB&&window.FB.user);
 function mpWhy(){return !window.MPB?"Multiplayer ist nicht eingerichtet (Realtime Database).":"Bitte erst einloggen (LOG IN)."}
-const VER=23;
+const VER=24;
 let lobbyFlag=null;
 function lobbySync(){
   if(!MP.code||!MP.joined||!window.MPB||!window.FB||!window.FB.user)return;
