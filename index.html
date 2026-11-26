@@ -153,22 +153,41 @@
     }
     .new-game {
       position: relative;
-      margin: 22px 0 20px;
-      padding: 19px 18px 17px;
+      margin: 25px 0 22px;
+      padding: 21px 18px 19px;
       overflow: hidden;
+      isolation: isolate;
       text-align: center;
-      background: linear-gradient(145deg, #fff0a9, #ffd75a 62%, #ffc94d);
+      background:
+        radial-gradient(ellipse at 8% 0%, rgba(255,255,255,.78) 0%, transparent 36%),
+        radial-gradient(ellipse at 100% 100%, rgba(255,166,82,.42) 0%, transparent 43%),
+        linear-gradient(132deg, #fff5c9 0%, #ffe58a 30%, #ffd15b 66%, #ffb96a 100%);
       border: 4px solid var(--purple-dark);
-      border-radius: 22px;
-      box-shadow: 0 6px 0 var(--purple-dark);
+      border-radius: 24px;
+      box-shadow: 0 7px 0 var(--purple-dark), 0 12px 22px rgba(65, 42, 17, .12);
+    }
+    .new-game::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      width: 210px;
+      height: 210px;
+      top: -125px;
+      right: -55px;
+      border: 2px solid rgba(255,255,255,.55);
+      border-radius: 50%;
+      box-shadow: 0 0 0 15px rgba(255,255,255,.12), 0 0 0 31px rgba(255,255,255,.09);
+      pointer-events: none;
     }
     .new-game::after {
       content: "✦";
       position: absolute;
-      top: 36px;
-      right: 17px;
-      color: rgba(43, 33, 64, .16);
-      font-size: 58px;
+      z-index: -1;
+      top: 44px;
+      right: 18px;
+      color: rgba(255,255,255,.48);
+      font-size: 76px;
+      text-shadow: 2px 3px 0 rgba(92, 60, 24, .08);
       transform: rotate(15deg);
       pointer-events: none;
     }
@@ -190,7 +209,7 @@
     }
     .new-game-badge {
       color: white;
-      background: #ef5578;
+      background: linear-gradient(135deg, #ff7894, #e94f79);
       box-shadow: 2px 2px 0 var(--purple-dark);
     }
     .new-game-tag { background: var(--paper); }
@@ -201,10 +220,10 @@
       display: grid;
       place-items: center;
       color: white;
-      background: var(--purple);
+      background: linear-gradient(145deg, #59458d, #30234f);
       border: 3px solid var(--purple-dark);
       border-radius: 16px;
-      box-shadow: 0 4px 0 var(--purple-dark);
+      box-shadow: 0 4px 0 var(--purple-dark), inset 0 2px 0 rgba(255,255,255,.16);
       font-size: 30px;
       line-height: 1;
       transform: rotate(-4deg);
