@@ -151,6 +151,115 @@
       transform: translateY(3px);
       box-shadow: 0 2px 0 var(--purple-dark);
     }
+    .new-game {
+      position: relative;
+      margin: 22px 0 20px;
+      padding: 19px 18px 17px;
+      overflow: hidden;
+      text-align: center;
+      background: linear-gradient(145deg, #fff0a9, #ffd75a 62%, #ffc94d);
+      border: 4px solid var(--purple-dark);
+      border-radius: 22px;
+      box-shadow: 0 6px 0 var(--purple-dark);
+    }
+    .new-game::after {
+      content: "✦";
+      position: absolute;
+      top: 36px;
+      right: 17px;
+      color: rgba(43, 33, 64, .16);
+      font-size: 58px;
+      transform: rotate(15deg);
+      pointer-events: none;
+    }
+    .new-game-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 11px;
+    }
+    .new-game-badge, .new-game-tag {
+      display: inline-block;
+      padding: 6px 9px;
+      border: 2px solid var(--purple-dark);
+      border-radius: 999px;
+      font-size: 10px;
+      letter-spacing: .7px;
+      line-height: 1;
+    }
+    .new-game-badge {
+      color: white;
+      background: #ef5578;
+      box-shadow: 2px 2px 0 var(--purple-dark);
+    }
+    .new-game-tag { background: var(--paper); }
+    .game-mark {
+      width: 54px;
+      height: 54px;
+      margin: 0 auto 8px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: var(--purple);
+      border: 3px solid var(--purple-dark);
+      border-radius: 16px;
+      box-shadow: 0 4px 0 var(--purple-dark);
+      font-size: 30px;
+      line-height: 1;
+      transform: rotate(-4deg);
+    }
+    .game-mark span { color: var(--yellow); display: inline; }
+    .new-game h2 {
+      margin: 10px 0 7px;
+      font-size: clamp(22px, 5vw, 27px);
+      line-height: 1.12;
+    }
+    .new-game p {
+      max-width: 390px;
+      margin: 0 auto 15px;
+      color: #51401c;
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 600;
+    }
+    .wrdlock-link {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      min-height: 55px;
+      padding: 12px 16px;
+      color: white;
+      background: #392c64;
+      border: 3px solid var(--purple-dark);
+      border-radius: 14px;
+      box-shadow: 0 5px 0 var(--purple-dark);
+      font-size: 18px;
+      text-decoration: none;
+      transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+    }
+    .wrdlock-link:hover, .wrdlock-link:focus-visible {
+      background: #514080;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 0 var(--purple-dark);
+      outline: none;
+    }
+    .wrdlock-link:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 var(--purple-dark);
+    }
+    .wrdlock-link .arrow { font-size: 22px; }
+    .game-url {
+      display: inline-block;
+      margin-top: 10px;
+      color: #51401c;
+      font-size: 12px;
+      font-weight: 700;
+    }
     .login {
       display: flex;
       align-items: flex-start;
@@ -248,6 +357,20 @@
           BlobboHop.github.io <span aria-hidden="true">↗</span>
         </a>
       </div>
+
+      <section class="new-game" aria-labelledby="wrdlock-title">
+        <div class="new-game-top">
+          <span class="new-game-badge">✦ BRANDNEU</span>
+          <span class="new-game-tag">NEUES SPIEL</span>
+        </div>
+        <div class="game-mark" aria-hidden="true">W<span>?</span></div>
+        <h2 id="wrdlock-title">Schon WrdLock entdeckt?</h2>
+        <p>Mein brandneues Wortspiel ist online! Knoble mit, knacke das Worträtsel und teste, wie gut du Wörter erkennst.</p>
+        <a class="wrdlock-link" href="https://WrdLock.github.io" target="_blank" rel="noopener noreferrer">
+          <span>WrdLock jetzt spielen</span><span class="arrow" aria-hidden="true">↗</span>
+        </a>
+        <span class="game-url">WrdLock.github.io</span>
+      </section>
 
       <div class="login">
         <div class="login-icon" aria-hidden="true">↻</div>
